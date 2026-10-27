@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExamSystem v5</title>
+    <title>Online Examination System v5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -31,7 +31,13 @@
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
 
-    <!-- MINIMAL TOP NAVBAR -->
+    <!-- OFFLINE ALERT BANNER (Automatically appears when Wi-Fi/Network drops) -->
+    <div id="offlineBanner" class="hidden bg-amber-500/15 border-b border-amber-500/30 text-amber-200 px-4 py-2 text-xs font-medium text-center flex items-center justify-center gap-2">
+        <i class="fa-solid fa-wifi-slash text-amber-400"></i>
+        <span id="offlineBannerText">Network disconnected — Offline Mode active. All answers and progress are being auto-saved locally to your device.</span>
+    </div>
+
+    <!-- TOP NAVBAR -->
     <header class="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/70 px-6 h-16 flex items-center">
         <div class="max-w-5xl w-full mx-auto flex items-center justify-between">
             <!-- Brand -->
@@ -39,21 +45,26 @@
                 <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm">
                     <i class="fa-solid fa-layer-group text-xs"></i>
                 </div>
-                <span class="font-bold text-white tracking-tight text-base">ExamSystem <span class="text-indigo-400 font-medium">v5</span></span>
+                <div class="flex items-center gap-2">
+                    <span class="font-bold text-white tracking-tight text-base">ExamSystem <span class="text-indigo-400 font-medium">v5</span></span>
+                    <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-900 text-slate-400 border border-slate-800" title="All changes automatically persist in browser storage">
+                        <i class="fa-solid fa-hard-drive text-indigo-400"></i> Auto-Persist
+                    </span>
+                </div>
             </div>
 
             <!-- Right Controls -->
-            <div class="flex items-center gap-4">
-                <!-- Online/Offline Toggle Pill -->
-                <button onclick="app.toggleNetwork()" id="netToggleBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <!-- Real Network Status + Click to Simulate Offline -->
+                <button onclick="app.toggleSimulateOffline()" id="netToggleBtn" title="Detects real Wi-Fi/Internet status automatically. Click to simulate Offline/Online switch." class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer">
                     <span id="netDot" class="w-2 h-2 rounded-full"></span>
                     <span id="netLabel">Online</span>
                 </button>
 
                 <!-- User Info & Logout (Hidden when logged out) -->
-                <div id="navUserArea" class="hidden items-center gap-3 pl-4 border-l border-slate-800">
+                <div id="navUserArea" class="hidden items-center gap-3 pl-3 sm:pl-4 border-l border-slate-800">
                     <div class="flex items-center gap-2">
-                        <span id="navUserName" class="text-xs font-semibold text-slate-200"></span>
+                        <span id="navUserName" class="text-xs font-semibold text-slate-200 hidden sm:inline"></span>
                         <span id="navUserRole" class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700"></span>
                     </div>
                     <button onclick="app.logout()" class="text-xs font-medium text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800/80 transition">
@@ -93,13 +104,13 @@
                     <form onsubmit="app.login(event)" class="space-y-4">
                         <div>
                             <label for="loginId" class="block text-xs font-medium text-slate-300 mb-1.5">User ID</label>
-                            <input type="text" id="loginId" required autocomplete="off" placeholder="Enter User ID"
+                            <input type="text" id="loginId" required autocomplete="username" placeholder="Enter User ID"
                                 class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
                         </div>
 
                         <div>
                             <label for="loginPw" class="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
-                            <input type="password" id="loginPw" required placeholder="Enter Password"
+                            <input type="password" id="loginPw" required autocomplete="current-password" placeholder="Enter Password"
                                 class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
                         </div>
 
@@ -107,6 +118,13 @@
                             Sign In
                         </button>
                     </form>
+
+                    <!-- Subtle Credentials Reference Link -->
+                    <div class="pt-2 border-t border-slate-800/60 text-center">
+                        <button type="button" onclick="app.openCredModal()" class="text-[11px] text-slate-400 hover:text-indigo-400 transition">
+                            <i class="fa-regular fa-circle-question mr-1"></i>System Credentials Reference
+                        </button>
+                    </div>
                 </div>
             </section>
 
@@ -117,7 +135,10 @@
                     <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl">
                         <div class="space-y-4">
                             <div class="flex items-center justify-between">
-                                <h2 class="text-base font-bold text-white">Examination</h2>
+                                <div>
+                                    <h2 class="text-base font-bold text-white">Examination</h2>
+                                    <p id="stuSubInfo" class="text-xs text-slate-400 mt-0.5"></p>
+                                </div>
                                 <span id="stuStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-medium">Not Taken</span>
                             </div>
 
@@ -156,17 +177,25 @@
             <section id="viewExam" class="hidden space-y-6">
                 <!-- Clean Header Bar -->
                 <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-                    <div class="flex items-center gap-4">
+                    <div class="flex flex-wrap items-center gap-4">
                         <div class="flex items-center gap-2.5">
                             <i class="fa-regular fa-clock text-indigo-400 text-sm"></i>
                             <span id="examTimerDisplay" class="text-sm font-semibold text-white mono">00h 30m 00s</span>
                         </div>
                         <span id="examModeBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium border">ONLINE</span>
+                        <span id="examSaveStatus" class="text-xs text-emerald-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Saved to local storage
+                        </span>
                     </div>
 
-                    <button onclick="app.openSubmitModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">
-                        Submit Exam
-                    </button>
+                    <div class="flex items-center gap-2.5">
+                        <button onclick="app.minimizeExamToDashboard()" class="px-3 py-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-medium transition" title="Progress and timer stay active">
+                            Portal
+                        </button>
+                        <button onclick="app.openSubmitModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">
+                            Submit Exam
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Main Exam Layout -->
@@ -185,7 +214,7 @@
 
                         <!-- Written Textarea -->
                         <div id="examWrittenArea" class="hidden pt-1">
-                            <textarea id="examWrittenInput" rows="4" placeholder="Write your answer here..."
+                            <textarea id="examWrittenInput" rows="4" placeholder="Write your answer here... (Auto-saved as you type)"
                                 oninput="app.handleWrittenInput(this.value)"
                                 class="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition"></textarea>
                         </div>
@@ -193,7 +222,7 @@
                         <!-- Bottom Navigation & Clear -->
                         <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
                             <button onclick="app.clearAnswer()" class="text-xs font-medium text-slate-400 hover:text-rose-400 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition">
-                                Clear Answer
+                                Clear Answer (CLR)
                             </button>
 
                             <div class="flex items-center gap-2.5">
@@ -233,7 +262,7 @@
                     <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80">
                         <button onclick="app.setTeacherTab('questions')" id="tTab_questions" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Questions</button>
                         <button onclick="app.setTeacherTab('students')" id="tTab_students" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Students</button>
-                        <button onclick="app.setTeacherTab('settings')" id="tTab_settings" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Settings</button>
+                        <button onclick="app.setTeacherTab('settings')" id="tTab_settings" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Timing</button>
                     </div>
                 </div>
 
@@ -275,10 +304,10 @@
                     </div>
                 </div>
 
-                <!-- Tab 3: Settings -->
+                <!-- Tab 3: Timing -->
                 <div id="tPane_settings" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl max-w-md space-y-5">
                     <div>
-                        <h3 class="text-sm font-bold text-white">Exam Settings</h3>
+                        <h3 class="text-sm font-bold text-white">Exam Timing</h3>
                         <p class="text-xs text-slate-400">Set the time limit in minutes (1 to 1440)</p>
                     </div>
 
@@ -305,6 +334,7 @@
                         <button onclick="window.app.setAdminTab('register')" id="aTab_register" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Register Student</button>
                         <button onclick="window.app.setAdminTab('sheets')" id="aTab_sheets" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Answer Sheets</button>
                         <button onclick="window.app.setAdminTab('logs')" id="aTab_logs" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Activity Log</button>
+                        <button onclick="window.app.setAdminTab('system')" id="aTab_system" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">System</button>
                     </div>
                 </div>
 
@@ -335,7 +365,7 @@
                 <div id="aPane_register" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl max-w-md space-y-5">
                     <div>
                         <h3 class="text-sm font-bold text-white">Register Student</h3>
-                        <p class="text-xs text-slate-400">Create a new student account</p>
+                        <p class="text-xs text-slate-400">Create a new student account (saved to persistent storage)</p>
                     </div>
 
                     <form onsubmit="app.registerStudent(event)" class="space-y-4">
@@ -370,7 +400,7 @@
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div>
                             <h3 class="text-sm font-bold text-white">Student Answer Sheets</h3>
-                            <p class="text-xs text-slate-400">Inspect recorded responses for each student</p>
+                            <p class="text-xs text-slate-400">Inspect recorded responses and whether they were answered Online or Offline</p>
                         </div>
                         <select id="adminSheetSelect" onchange="app.renderAdminSheet()"
                             class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500">
@@ -384,15 +414,74 @@
                 <div id="aPane_logs" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
                     <div>
                         <h3 class="text-sm font-bold text-white">Activity Log</h3>
-                        <p class="text-xs text-slate-400">Recent system audit events</p>
+                        <p class="text-xs text-slate-400">Recent system audit events (`audit.log`)</p>
                     </div>
 
                     <div id="adminLogsList" class="divide-y divide-slate-800/60 max-h-96 overflow-y-auto"></div>
+                </div>
+
+                <!-- Tab 5: System & Storage Reset -->
+                <div id="aPane_system" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-6 max-w-xl">
+                    <div class="space-y-1">
+                        <h3 class="text-sm font-bold text-white">System Status & Storage</h3>
+                        <p class="text-xs text-slate-400">Manage persistent local storage and network states</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                            <span class="text-slate-400 block">Browser Network (`navigator.onLine`)</span>
+                            <span id="sysRealNet" class="font-semibold text-white mono block">ONLINE</span>
+                        </div>
+                        <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
+                            <span class="text-slate-400 block">Effective App Mode</span>
+                            <span id="sysEffectiveNet" class="font-semibold text-white mono block">ONLINE</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-800 flex items-center justify-between gap-4">
+                        <div>
+                            <h4 class="text-xs font-bold text-rose-400">Reset All Saved Data</h4>
+                            <p class="text-[11px] text-slate-400">Wipes all custom questions, results, and sessions back to default seed data.</p>
+                        </div>
+                        <button onclick="app.resetAllData()" class="px-4 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-rose-300 text-xs font-semibold transition shrink-0">
+                            Reset Storage
+                        </button>
+                    </div>
                 </div>
             </section>
 
         </div>
     </main>
+
+    <!-- ================= MODAL: SYSTEM CREDENTIALS REFERENCE ================= -->
+    <div id="credModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold text-white">Default System Credentials</h3>
+                <button onclick="app.closeCredModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <div class="font-semibold text-indigo-400">Student Accounts</div>
+                    <div class="text-slate-300 mono">ID: <span class="text-white">STU001</span>, <span class="text-white">STU002</span>, <span class="text-white">STU003</span>, or <span class="text-white">STU004</span></div>
+                    <div class="text-slate-400">Password: Any non-empty password (for default demo students)</div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <div class="font-semibold text-emerald-400">Teacher Account</div>
+                    <div class="text-slate-300 mono">ID: <span class="text-white">890teach</span> &nbsp;|&nbsp; Password: <span class="text-white">teacher123</span></div>
+                </div>
+                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
+                    <div class="font-semibold text-amber-400">Admin Account</div>
+                    <div class="text-slate-300 mono">ID: <span class="text-white">admin_sys</span> &nbsp;|&nbsp; Password: <span class="text-white">admin123</span></div>
+                </div>
+            </div>
+            <div class="pt-1 flex justify-end">
+                <button onclick="app.closeCredModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition">Close</button>
+            </div>
+        </div>
+    </div>
 
     <!-- ================= MODAL: ADD / EDIT QUESTION ================= -->
     <div id="questionModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -487,42 +576,104 @@
 
     <!-- APPLICATION SCRIPT -->
     <script>
-        const STORAGE_KEY = 'exam_system_v5_clean_state';
+        const STORAGE_KEY = 'exam_system_v5_persistent_db';
 
         const appInstance = {
+            // Persistent state saved in localStorage
             state: {
-                online: true,
+                simulatedOffline: false,
                 duration: 30,
                 questions: [],
                 students: [],
                 results: [],
                 answers: {},
-                logs: []
+                logs: [],
+                // Active session persistence so closing/reloading the tab never loses login or exam progress
+                activeSession: {
+                    user: null,         // { id, name, role }
+                    activeView: 'viewLogin', // 'viewLogin' | 'viewStudent' | 'viewExam' | 'viewTeacher' | 'viewAdmin'
+                    currentQ: 0,
+                    teacherTab: 'questions',
+                    adminTab: 'results'
+                }
             },
-            session: {
-                role: 'Student',
-                user: null,
-                currentQ: 0,
+
+            // Runtime properties
+            runtime: {
+                browserOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+                selectedLoginRole: 'Student',
                 timerInterval: null,
-                deadlineMs: 0
+                deadlineMs: 0,
+                lastWarnSec: -1
+            },
+
+            // Returns true only if both real Wi-Fi/internet is connected AND user hasn't toggled simulated offline mode
+            isOnline() {
+                return Boolean(this.runtime.browserOnline && !this.state.simulatedOffline);
             },
 
             init() {
                 this.loadState();
+                this.setupNetworkListeners();
+                this.setupLifecycleListeners();
                 this.setRole('Student');
                 this.updateNetworkUI();
+                this.restoreActiveSession();
             },
 
-            loadState() {
-                const raw = localStorage.getItem(STORAGE_KEY);
-                if (raw) {
-                    try {
-                        this.state = JSON.parse(raw);
-                        return;
-                    } catch (e) {}
-                }
-                this.state = {
-                    online: true,
+            // 1. REAL BROWSER NETWORK DETECTION + PERIODIC CONNECTIVITY CHECK
+            setupNetworkListeners() {
+                window.addEventListener('online', () => {
+                    this.runtime.browserOnline = true;
+                    this.handleConnectivityChange("Internet connection restored (ONLINE). Syncing local progress...");
+                });
+
+                window.addEventListener('offline', () => {
+                    this.runtime.browserOnline = false;
+                    this.handleConnectivityChange("Wi-Fi / Internet disconnected! Switched to OFFLINE local auto-save mode.");
+                });
+
+                // Lightweight periodic check in case navigator.onLine changes silently
+                setInterval(() => {
+                    const currentBrowserStatus = navigator.onLine;
+                    if (currentBrowserStatus !== this.runtime.browserOnline) {
+                        this.runtime.browserOnline = currentBrowserStatus;
+                        this.handleConnectivityChange(
+                            currentBrowserStatus
+                                ? "Network connection restored (ONLINE)."
+                                : "Network connection lost (OFFLINE mode active)."
+                        );
+                    }
+                }, 2000);
+            },
+
+            handleConnectivityChange(msg) {
+                this.updateNetworkUI();
+                this.logEvent(this.isOnline() ? "Network status: ONLINE" : "Network status: OFFLINE (Local Auto-Save)");
+                this.toast(msg);
+            },
+
+            // 2. LIFECYCLE & TAB CLOSE PERSISTENCE
+            setupLifecycleListeners() {
+                // Save immediately before tab closes or refreshes
+                window.addEventListener('beforeunload', () => {
+                    this.saveState();
+                });
+
+                // Sync across tabs if user has another tab open
+                window.addEventListener('storage', (e) => {
+                    if (e.key === STORAGE_KEY && e.newValue) {
+                        try {
+                            this.state = JSON.parse(e.newValue);
+                            this.updateNetworkUI();
+                        } catch (_) {}
+                    }
+                });
+            },
+
+            getDefaultState() {
+                return {
+                    simulatedOffline: false,
                     duration: 30,
                     questions: [
                         { text: "What is 12 + 8?", options: ["18", "20", "22", "24"], correct: "B", type: "M" },
@@ -540,13 +691,84 @@
                     answers: {},
                     logs: [
                         { time: this.nowStr(), event: "System initialized" }
-                    ]
+                    ],
+                    activeSession: {
+                        user: null,
+                        activeView: 'viewLogin',
+                        currentQ: 0,
+                        teacherTab: 'questions',
+                        adminTab: 'results'
+                    }
                 };
+            },
+
+            loadState() {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    try {
+                        const parsed = JSON.parse(raw);
+                        this.state = Object.assign(this.getDefaultState(), parsed);
+                        if (!this.state.activeSession) {
+                            this.state.activeSession = {
+                                user: null,
+                                activeView: 'viewLogin',
+                                currentQ: 0,
+                                teacherTab: 'questions',
+                                adminTab: 'results'
+                            };
+                        }
+                        return;
+                    } catch (e) {}
+                }
+                this.state = this.getDefaultState();
                 this.saveState();
             },
 
             saveState() {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+                    const saveIndicator = document.getElementById('examSaveStatus');
+                    if (saveIndicator) {
+                        saveIndicator.innerHTML = `<i class="fa-solid fa-check text-[11px]"></i> Saved (${this.isOnline() ? 'Synced' : 'Local Disk'})`;
+                    }
+                } catch (e) {}
+            },
+
+            // Restore logged-in portal or active live exam if user refreshes or reopens tab
+            restoreActiveSession() {
+                const sess = this.state.activeSession;
+                if (!sess || !sess.user) {
+                    this.showOnlyView('viewLogin');
+                    return;
+                }
+
+                const user = sess.user;
+                document.getElementById('navUserName').textContent = user.name;
+                document.getElementById('navUserRole').textContent = user.role;
+                const navArea = document.getElementById('navUserArea');
+                navArea.classList.remove('hidden');
+                navArea.classList.add('flex');
+
+                if (user.role === 'Student') {
+                    const stu = this.state.students.find(s => s.id === user.id);
+                    if (!stu) {
+                        this.logout();
+                        return;
+                    }
+                    // If the student was inside the live exam when they closed the browser, resume it automatically
+                    if (sess.activeView === 'viewExam' && stu.status === 1) {
+                        this.startOrResumeExam(true);
+                    } else {
+                        this.showOnlyView('viewStudent');
+                        this.renderStudentPortal();
+                    }
+                } else if (user.role === 'Teacher') {
+                    this.showOnlyView('viewTeacher');
+                    this.setTeacherTab(sess.teacherTab || 'questions');
+                } else if (user.role === 'Admin') {
+                    this.showOnlyView('viewAdmin');
+                    this.setAdminTab(sess.adminTab || 'results');
+                }
             },
 
             logEvent(event) {
@@ -576,47 +798,72 @@
                 const area = document.getElementById('toastArea');
                 if (!area) return;
                 const el = document.createElement('div');
-                el.className = 'px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-medium text-slate-200 shadow-xl transition';
+                el.className = 'px-4 py-3 rounded-xl bg-slate-900/95 border border-slate-700 text-xs font-medium text-slate-100 shadow-2xl transition';
                 el.textContent = msg;
                 area.appendChild(el);
-                setTimeout(() => el.remove(), 3000);
+                setTimeout(() => el.remove(), 3500);
             },
 
-            toggleNetwork() {
-                this.state.online = !this.state.online;
+            // Manual toggle to test offline behavior even when Wi-Fi is on
+            toggleSimulateOffline() {
+                this.state.simulatedOffline = !this.state.simulatedOffline;
                 this.saveState();
                 this.updateNetworkUI();
-                this.toast(this.state.online ? "Mode: ONLINE (Connected)" : "Mode: OFFLINE (Local Save)");
+                if (this.isOnline()) {
+                    this.toast("Mode: ONLINE (Connected & Synced)");
+                } else {
+                    this.toast("Mode: OFFLINE (Simulated Disconnect — Local Save Active)");
+                }
             },
 
             updateNetworkUI() {
+                const online = this.isOnline();
                 const btn = document.getElementById('netToggleBtn');
                 const dot = document.getElementById('netDot');
                 const label = document.getElementById('netLabel');
                 const examBadge = document.getElementById('examModeBadge');
-                if (!btn) return;
+                const banner = document.getElementById('offlineBanner');
+                const bannerText = document.getElementById('offlineBannerText');
 
-                if (this.state.online) {
-                    btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-emerald-500/10 border-emerald-500/20 text-emerald-300 transition";
-                    dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-                    label.textContent = "Online";
-                    if (examBadge) {
-                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-300";
-                        examBadge.textContent = "ONLINE";
-                    }
-                } else {
-                    btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-amber-500/10 border-amber-500/20 text-amber-300 transition";
-                    dot.className = "w-2 h-2 rounded-full bg-amber-400";
-                    label.textContent = "Offline";
-                    if (examBadge) {
-                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-300";
-                        examBadge.textContent = "OFFLINE";
+                if (banner) {
+                    banner.classList.toggle('hidden', online);
+                    if (!online && bannerText) {
+                        bannerText.textContent = !this.runtime.browserOnline
+                            ? "Real network connection lost (Wi-Fi/Internet offline) — All exam answers and progress are automatically saved in local storage."
+                            : "Simulated Offline Mode active (Click 'Offline' pill in top bar to reconnect) — Progress is saved locally.";
                     }
                 }
+
+                if (btn) {
+                    if (online) {
+                        btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-emerald-500/10 border-emerald-500/20 text-emerald-300 transition cursor-pointer";
+                        dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                        label.textContent = "Online";
+                    } else {
+                        btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-amber-500/15 border-amber-500/30 text-amber-300 transition cursor-pointer";
+                        dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+                        label.textContent = !this.runtime.browserOnline ? "Offline (No Wi-Fi)" : "Offline (Simulated)";
+                    }
+                }
+
+                if (examBadge) {
+                    if (online) {
+                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-300";
+                        examBadge.textContent = "ONLINE";
+                    } else {
+                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 border border-amber-500/30 text-amber-300";
+                        examBadge.textContent = "OFFLINE (LOCAL SAVE)";
+                    }
+                }
+
+                const sysReal = document.getElementById('sysRealNet');
+                const sysEff = document.getElementById('sysEffectiveNet');
+                if (sysReal) sysReal.textContent = this.runtime.browserOnline ? "CONNECTED (navigator.onLine = true)" : "DISCONNECTED (navigator.onLine = false)";
+                if (sysEff) sysEff.textContent = online ? "ONLINE" : "OFFLINE (Local Auto-Save)";
             },
 
             setRole(role) {
-                this.session.role = role;
+                this.runtime.selectedLoginRole = role;
                 ['Student', 'Teacher', 'Admin'].forEach(r => {
                     const btn = document.getElementById('roleBtn_' + r);
                     if (!btn) return;
@@ -641,7 +888,7 @@
                 e.preventDefault();
                 const id = document.getElementById('loginId').value.trim();
                 const pw = document.getElementById('loginPw').value;
-                const role = this.session.role;
+                const role = this.runtime.selectedLoginRole;
 
                 if (!id || !pw) {
                     this.showLoginError("User ID and Password are required.");
@@ -652,15 +899,15 @@
                     const stu = this.state.students.find(s => s.id.toLowerCase() === id.toLowerCase());
                     if (!stu) {
                         this.logEvent("Login failed (Student)");
-                        this.showLoginError("Invalid Student ID or credentials.");
+                        this.showLoginError("Student ID not found. Use STU001 - STU004 or register via Admin.");
                         return;
                     }
                     if (stu.pw && stu.pw !== pw) {
                         this.logEvent("Login failed (Student)");
-                        this.showLoginError("Incorrect password.");
+                        this.showLoginError("Incorrect student password.");
                         return;
                     }
-                    this.session.user = { id: stu.id, name: stu.name, role: 'Student' };
+                    this.state.activeSession.user = { id: stu.id, name: stu.name, role: 'Student' };
                     this.logEvent(`Student logged in: ${stu.id}`);
                     this.enterPortal('viewStudent');
                     this.renderStudentPortal();
@@ -669,10 +916,10 @@
                     const validPw = (pw === 'teacher123' || pw === 'admin123');
                     if (!validId || !validPw) {
                         this.logEvent("Login failed (Teacher)");
-                        this.showLoginError("Invalid Teacher credentials.");
+                        this.showLoginError("Invalid Teacher credentials (use 890teach / teacher123).");
                         return;
                     }
-                    this.session.user = { id, name: 'Teacher', role: 'Teacher' };
+                    this.state.activeSession.user = { id, name: 'Teacher', role: 'Teacher' };
                     this.logEvent(`Teacher logged in: ${id}`);
                     this.enterPortal('viewTeacher');
                     this.setTeacherTab('questions');
@@ -681,10 +928,10 @@
                     const validPw = (pw === 'admin123' || pw === 'master123');
                     if (!validId || !validPw) {
                         this.logEvent("Login failed (Admin)");
-                        this.showLoginError("Invalid Admin credentials.");
+                        this.showLoginError("Invalid Admin credentials (use admin_sys / admin123).");
                         return;
                     }
-                    this.session.user = { id, name: 'Admin', role: 'Admin' };
+                    this.state.activeSession.user = { id, name: 'Admin', role: 'Admin' };
                     this.logEvent(`Admin logged in: ${id}`);
                     this.enterPortal('viewAdmin');
                     this.setAdminTab('results');
@@ -693,24 +940,29 @@
                 document.getElementById('loginId').value = '';
                 document.getElementById('loginPw').value = '';
                 document.getElementById('loginError').classList.add('hidden');
+                this.saveState();
             },
 
             logout() {
-                if (this.session.timerInterval) {
-                    clearInterval(this.session.timerInterval);
-                    this.session.timerInterval = null;
+                if (this.runtime.timerInterval) {
+                    clearInterval(this.runtime.timerInterval);
+                    this.runtime.timerInterval = null;
                 }
-                if (this.session.user) {
-                    this.logEvent(`${this.session.user.role} logged out: ${this.session.user.id}`);
+                if (this.state.activeSession.user) {
+                    this.logEvent(`${this.state.activeSession.user.role} logged out: ${this.state.activeSession.user.id}`);
                 }
-                this.session.user = null;
+                this.state.activeSession.user = null;
+                this.state.activeSession.activeView = 'viewLogin';
+                this.saveState();
+
                 document.getElementById('navUserArea').classList.add('hidden');
                 this.showOnlyView('viewLogin');
             },
 
             enterPortal(viewId) {
-                document.getElementById('navUserName').textContent = this.session.user.name;
-                document.getElementById('navUserRole').textContent = this.session.user.role;
+                const user = this.state.activeSession.user;
+                document.getElementById('navUserName').textContent = user.name;
+                document.getElementById('navUserRole').textContent = user.role;
                 const navArea = document.getElementById('navUserArea');
                 navArea.classList.remove('hidden');
                 navArea.classList.add('flex');
@@ -718,16 +970,31 @@
             },
 
             showOnlyView(viewId) {
+                this.state.activeSession.activeView = viewId;
+                this.saveState();
                 ['viewLogin', 'viewStudent', 'viewExam', 'viewTeacher', 'viewAdmin'].forEach(v => {
                     const el = document.getElementById(v);
                     if (el) el.classList.toggle('hidden', v !== viewId);
                 });
             },
 
+            minimizeExamToDashboard() {
+                if (this.runtime.timerInterval) {
+                    clearInterval(this.runtime.timerInterval);
+                    this.runtime.timerInterval = null;
+                }
+                this.showOnlyView('viewStudent');
+                this.renderStudentPortal();
+                this.toast("Exam progress saved. Click 'Resume Exam' to continue.");
+            },
+
             renderStudentPortal() {
-                const stu = this.state.students.find(s => s.id === this.session.user.id);
+                const user = this.state.activeSession.user;
+                if (!user) return;
+                const stu = this.state.students.find(s => s.id === user.id);
                 if (!stu) return;
 
+                document.getElementById('stuSubInfo').textContent = `${stu.id} • Roll: ${stu.roll}`;
                 document.getElementById('stuDurationText').textContent = `${this.state.duration} Mins`;
                 document.getElementById('stuQuestionCountText').textContent = this.state.questions.length;
 
@@ -740,8 +1007,9 @@
                     btn.textContent = "Start Exam";
                     btn.disabled = false;
                 } else if (stu.status === 1) {
+                    const remainSec = Math.max(0, (stu.start + this.state.duration * 60) - this.nowSec());
                     badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30";
-                    badge.textContent = "In Progress";
+                    badge.textContent = `In Progress (${this.fmtLeft(remainSec)})`;
                     btn.textContent = "Resume Exam";
                     btn.disabled = false;
                 } else {
@@ -766,8 +1034,10 @@
                 }
             },
 
-            startOrResumeExam() {
-                const stu = this.state.students.find(s => s.id === this.session.user.id);
+            startOrResumeExam(isRestoringAfterReload = false) {
+                const user = this.state.activeSession.user;
+                if (!user) return;
+                const stu = this.state.students.find(s => s.id === user.id);
                 if (!stu || stu.status === 2) return;
                 if (this.state.questions.length === 0) {
                     this.toast("No questions available.");
@@ -778,49 +1048,64 @@
                 if (stu.status === 0) {
                     stu.status = 1;
                     stu.start = now;
+                    this.state.activeSession.currentQ = 0;
                     this.saveState();
                 }
 
+                // Exact C++ formula: me_.start() + ctx_.loadDuration() * 60 - Util::nowSec()
                 const remainSec = (stu.start + this.state.duration * 60) - now;
                 if (remainSec <= 0) {
                     this.finishExam(true);
                     return;
                 }
 
-                this.session.deadlineMs = Date.now() + remainSec * 1000;
-                this.session.currentQ = 0;
+                this.runtime.deadlineMs = Date.now() + remainSec * 1000;
+                if (typeof this.state.activeSession.currentQ !== 'number' || this.state.activeSession.currentQ >= this.state.questions.length) {
+                    this.state.activeSession.currentQ = 0;
+                }
                 if (!this.state.answers[stu.id]) {
                     this.state.answers[stu.id] = {};
                 }
 
-                this.logEvent(`Exam started/resumed: ${stu.id}`);
+                if (!isRestoringAfterReload) {
+                    this.logEvent(`Exam started/resumed: ${stu.id}`);
+                } else {
+                    this.toast(`Session restored! Resuming exam at Question ${this.state.activeSession.currentQ + 1}.`);
+                }
+
                 this.showOnlyView('viewExam');
                 this.renderExamQuestion();
                 this.startWatchdog();
             },
 
             startWatchdog() {
-                if (this.session.timerInterval) clearInterval(this.session.timerInterval);
+                if (this.runtime.timerInterval) clearInterval(this.runtime.timerInterval);
                 const updateTimer = () => {
-                    const ms = this.session.deadlineMs - Date.now();
+                    const ms = this.runtime.deadlineMs - Date.now();
                     const left = ms > 0 ? Math.ceil(ms / 1000) : 0;
                     const timerEl = document.getElementById('examTimerDisplay');
                     if (timerEl) timerEl.textContent = this.fmtLeft(left);
+
+                    if ((left === 300 || left === 60 || left === 10) && left !== this.runtime.lastWarnSec) {
+                        this.runtime.lastWarnSec = left;
+                        this.toast(`WARNING: ${this.fmtLeft(left)} remaining!`);
+                    }
+
                     if (left <= 0) {
-                        clearInterval(this.session.timerInterval);
-                        this.session.timerInterval = null;
+                        clearInterval(this.runtime.timerInterval);
+                        this.runtime.timerInterval = null;
                         this.finishExam(true);
                     }
                 };
                 updateTimer();
-                this.session.timerInterval = setInterval(updateTimer, 250);
+                this.runtime.timerInterval = setInterval(updateTimer, 250);
             },
 
             renderExamQuestion() {
                 const qs = this.state.questions;
-                const idx = this.session.currentQ;
+                const idx = this.state.activeSession.currentQ;
                 const q = qs[idx];
-                const stuId = this.session.user.id;
+                const stuId = this.state.activeSession.user.id;
                 const sheet = this.state.answers[stuId] || {};
                 const ans = sheet[idx];
 
@@ -865,7 +1150,7 @@
 
             renderPalette() {
                 const qs = this.state.questions;
-                const stuId = this.session.user.id;
+                const stuId = this.state.activeSession.user.id;
                 const sheet = this.state.answers[stuId] || {};
                 let answeredCount = 0;
 
@@ -873,7 +1158,7 @@
                     const a = sheet[i];
                     const isAnswered = a && ((a.choice && a.choice !== '') || (a.text && a.text.trim() !== ''));
                     if (isAnswered) answeredCount++;
-                    const isCurrent = (i === this.session.currentQ);
+                    const isCurrent = (i === this.state.activeSession.currentQ);
 
                     let cls = "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700";
                     if (isCurrent) {
@@ -895,13 +1180,14 @@
             },
 
             selectMcq(letter) {
-                const stuId = this.session.user.id;
+                const stuId = this.state.activeSession.user.id;
+                const idx = this.state.activeSession.currentQ;
                 if (!this.state.answers[stuId]) this.state.answers[stuId] = {};
-                this.state.answers[stuId][this.session.currentQ] = {
+                this.state.answers[stuId][idx] = {
                     choice: letter,
                     text: '',
                     isWritten: false,
-                    mode: this.state.online ? 'ON' : 'OFF',
+                    mode: this.isOnline() ? 'ON' : 'OFF',
                     t: this.nowSec()
                 };
                 this.saveState();
@@ -909,17 +1195,18 @@
             },
 
             handleWrittenInput(val) {
-                const stuId = this.session.user.id;
+                const stuId = this.state.activeSession.user.id;
+                const idx = this.state.activeSession.currentQ;
                 if (!this.state.answers[stuId]) this.state.answers[stuId] = {};
                 const clean = val.replace(/[|\r\n]/g, ' ');
                 if (clean.trim() === '') {
-                    delete this.state.answers[stuId][this.session.currentQ];
+                    delete this.state.answers[stuId][idx];
                 } else {
-                    this.state.answers[stuId][this.session.currentQ] = {
+                    this.state.answers[stuId][idx] = {
                         choice: '',
                         text: clean,
                         isWritten: true,
-                        mode: this.state.online ? 'ON' : 'OFF',
+                        mode: this.isOnline() ? 'ON' : 'OFF',
                         t: this.nowSec()
                     };
                 }
@@ -928,30 +1215,34 @@
             },
 
             clearAnswer() {
-                const stuId = this.session.user.id;
+                const stuId = this.state.activeSession.user.id;
+                const idx = this.state.activeSession.currentQ;
                 if (this.state.answers[stuId]) {
-                    delete this.state.answers[stuId][this.session.currentQ];
+                    delete this.state.answers[stuId][idx];
                     this.saveState();
                 }
                 this.renderExamQuestion();
             },
 
             prevQ() {
-                if (this.session.currentQ > 0) {
-                    this.session.currentQ--;
+                if (this.state.activeSession.currentQ > 0) {
+                    this.state.activeSession.currentQ--;
+                    this.saveState();
                     this.renderExamQuestion();
                 }
             },
 
             nextQ() {
-                if (this.session.currentQ < this.state.questions.length - 1) {
-                    this.session.currentQ++;
+                if (this.state.activeSession.currentQ < this.state.questions.length - 1) {
+                    this.state.activeSession.currentQ++;
+                    this.saveState();
                     this.renderExamQuestion();
                 }
             },
 
             jumpToQ(i) {
-                this.session.currentQ = i;
+                this.state.activeSession.currentQ = i;
+                this.saveState();
                 this.renderExamQuestion();
             },
 
@@ -965,12 +1256,14 @@
 
             finishExam(autoEnd) {
                 this.closeSubmitModal();
-                if (this.session.timerInterval) {
-                    clearInterval(this.session.timerInterval);
-                    this.session.timerInterval = null;
+                if (this.runtime.timerInterval) {
+                    clearInterval(this.runtime.timerInterval);
+                    this.runtime.timerInterval = null;
                 }
 
-                const stu = this.state.students.find(s => s.id === this.session.user.id);
+                const user = this.state.activeSession.user;
+                if (!user) return;
+                const stu = this.state.students.find(s => s.id === user.id);
                 if (!stu) return;
 
                 const sheet = this.state.answers[stu.id] || {};
@@ -1001,14 +1294,14 @@
                 });
 
                 this.logEvent(`Exam finished: ${stu.id} score ${score}${autoEnd ? ' (time up)' : ''}`);
-                this.saveState();
-
-                this.toast(autoEnd ? "Time up! Exam auto-submitted." : "Exam submitted successfully.");
                 this.showOnlyView('viewStudent');
                 this.renderStudentPortal();
+                this.toast(autoEnd ? "Time up! Exam auto-submitted." : "Exam submitted successfully.");
             },
 
             setTeacherTab(tab) {
+                this.state.activeSession.teacherTab = tab;
+                this.saveState();
                 ['questions', 'students', 'settings'].forEach(t => {
                     const btn = document.getElementById('tTab_' + t);
                     const pane = document.getElementById('tPane_' + t);
@@ -1132,7 +1425,7 @@
                 this.saveState();
                 this.closeQuestionModal();
                 this.renderTeacherQuestions();
-                this.toast("Question saved.");
+                this.toast("Question saved to persistent storage.");
             },
 
             deleteQuestion(idx) {
@@ -1193,10 +1486,12 @@
             },
 
             setAdminTab(tab) {
-                ['results', 'register', 'sheets', 'logs'].forEach(t => {
+                this.state.activeSession.adminTab = tab;
+                this.saveState();
+                ['results', 'register', 'sheets', 'logs', 'system'].forEach(t => {
                     const btn = document.getElementById('aTab_' + t);
                     const pane = document.getElementById('aPane_' + t);
-                    if (!btn) return;
+                    if (!btn || !pane) return;
                     if (t === tab) {
                         btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
                         pane.classList.remove('hidden');
@@ -1209,6 +1504,7 @@
                 if (tab === 'results') this.renderAdminResults();
                 if (tab === 'sheets') this.initAdminSheets();
                 if (tab === 'logs') this.renderAdminLogs();
+                if (tab === 'system') this.updateNetworkUI();
             },
 
             renderAdminResults() {
@@ -1252,7 +1548,7 @@
                 document.getElementById('regName').value = '';
                 document.getElementById('regRoll').value = '';
                 document.getElementById('regPw').value = '';
-                this.toast(`Student ${id} registered.`);
+                this.toast(`Student ${id} registered and saved.`);
             },
 
             initAdminSheets() {
@@ -1286,7 +1582,7 @@
                             </div>
                             <div class="flex items-center gap-3 shrink-0">
                                 <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-white font-medium mono">${this.escapeHtml(responseText)}</span>
-                                <span class="text-[11px] text-slate-500 mono">${a.mode}</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold mono ${a.mode === 'ON' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/15 text-amber-300'}">${a.mode}</span>
                             </div>
                         </div>
                     `;
@@ -1303,6 +1599,22 @@
                 `).join('');
             },
 
+            resetAllData() {
+                localStorage.removeItem(STORAGE_KEY);
+                this.state = this.getDefaultState();
+                this.saveState();
+                this.logout();
+                this.toast("All local storage reset to default factory seed data.");
+            },
+
+            openCredModal() {
+                document.getElementById('credModal').classList.remove('hidden');
+            },
+
+            closeCredModal() {
+                document.getElementById('credModal').classList.add('hidden');
+            },
+
             escapeHtml(str) {
                 return String(str).replace(/[&<>"']/g, m => ({
                     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -1310,7 +1622,6 @@
             }
         };
 
-        // Ensure global window.app binding
         window.app = appInstance;
 
         if (document.readyState === 'loading') {
