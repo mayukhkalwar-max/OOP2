@@ -6,13 +6,13 @@
     <title>Online Examination System v5</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { 
+                    fontFamily: {
                         sans: ['Plus Jakarta Sans', 'sans-serif'],
                         mono: ['JetBrains Mono', 'monospace'],
                     }
@@ -24,470 +24,530 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         .mono { font-family: 'JetBrains Mono', monospace; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-track { background: #020617; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
+<body class="bg-slate-950 text-slate-100 w-screen h-screen overflow-hidden flex flex-col select-none">
 
-    <!-- OFFLINE ALERT BANNER (Automatically appears when Wi-Fi/Network drops) -->
-    <div id="offlineBanner" class="hidden bg-amber-500/15 border-b border-amber-500/30 text-amber-200 px-4 py-2 text-xs font-medium text-center flex items-center justify-center gap-2">
+    <div id="offlineBanner" class="hidden bg-amber-500/15 border-b border-amber-500/30 text-amber-200 px-6 py-2 text-xs font-medium text-center flex items-center justify-center gap-2 shrink-0">
         <i class="fa-solid fa-wifi-slash text-amber-400"></i>
         <span id="offlineBannerText">Network disconnected — Offline Mode active. All answers and progress are being auto-saved locally to your device.</span>
     </div>
 
-    <!-- TOP NAVBAR -->
-    <header class="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/70 px-6 h-16 flex items-center">
-        <div class="max-w-5xl w-full mx-auto flex items-center justify-between">
-            <!-- Brand -->
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm">
-                    <i class="fa-solid fa-layer-group text-xs"></i>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="font-bold text-white tracking-tight text-base">ExamSystem <span class="text-indigo-400 font-medium">v5</span></span>
-                    <span class="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-900 text-slate-400 border border-slate-800" title="All changes automatically persist in browser storage">
-                        <i class="fa-solid fa-hard-drive text-indigo-400"></i> Auto-Persist
-                    </span>
-                </div>
+    <header class="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 px-6 h-16 flex items-center justify-between shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30">
+                <i class="fa-solid fa-shield-halved text-base"></i>
             </div>
+            <div>
+                <span class="font-extrabold text-white tracking-tight text-lg block leading-none">ExamSystem <span class="text-indigo-400">v5</span></span>
+                <span class="text-[11px] text-slate-400 font-medium">Assessment & Examination Terminal</span>
+            </div>
+        </div>
 
-            <!-- Right Controls -->
-            <div class="flex items-center gap-3 sm:gap-4">
-                <!-- Real Network Status + Click to Simulate Offline -->
-                <button onclick="app.toggleSimulateOffline()" id="netToggleBtn" title="Detects real Wi-Fi/Internet status automatically. Click to simulate Offline/Online switch." class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer">
-                    <span id="netDot" class="w-2 h-2 rounded-full"></span>
-                    <span id="netLabel">Online</span>
-                </button>
+        <div class="flex items-center gap-4">
+            <button onclick="app.toggleSimulateOffline()" id="netToggleBtn" class="flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer">
+                <span id="netDot" class="w-2.5 h-2.5 rounded-full"></span>
+                <span id="netLabel">ONLINE</span>
+            </button>
 
-                <!-- User Info & Logout (Hidden when logged out) -->
-                <div id="navUserArea" class="hidden items-center gap-3 pl-3 sm:pl-4 border-l border-slate-800">
-                    <div class="flex items-center gap-2">
-                        <span id="navUserName" class="text-xs font-semibold text-slate-200 hidden sm:inline"></span>
-                        <span id="navUserRole" class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700"></span>
-                    </div>
-                    <button onclick="app.logout()" class="text-xs font-medium text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800/80 transition">
-                        Logout
-                    </button>
+            <div id="navUserArea" class="hidden items-center gap-4 pl-4 border-l border-slate-800">
+                <div class="text-right hidden sm:block">
+                    <span id="navUserName" class="text-sm font-bold text-white block leading-none"></span>
+                    <span id="navUserRole" class="text-[11px] font-semibold text-indigo-400 uppercase tracking-wider"></span>
                 </div>
+                <button onclick="app.logout()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-200 hover:text-white text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-power-off"></i> Logout
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- TOAST NOTIFICATION AREA -->
-    <div id="toastArea" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+    <div id="toastArea" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
 
-    <!-- MAIN CONTENT CONTAINER -->
-    <main class="flex-1 flex flex-col justify-center py-10 px-6">
-        <div class="max-w-5xl w-full mx-auto">
+    <main class="flex-1 w-full h-full overflow-hidden flex flex-col">
 
-            <!-- ================= 1. LOGIN VIEW ================= -->
-            <section id="viewLogin" class="max-w-sm mx-auto">
-                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-8 shadow-2xl space-y-6">
-                    <div class="text-center space-y-1">
-                        <h1 class="text-xl font-bold text-white tracking-tight">Welcome back</h1>
-                        <p class="text-xs text-slate-400">Sign in to continue to ExamSystem</p>
+        <section id="viewLogin" class="w-full h-full grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden">
+            <div class="lg:col-span-7 bg-slate-950 p-8 sm:p-12 lg:p-16 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800/80 relative overflow-hidden">
+                <div class="space-y-6 max-w-2xl">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
+                        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+                        Examination Environment Ready
+                    </div>
+                    <h1 class="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Online Examination System
+                    </h1>
+                    <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+                        Synchronized assessment portal featuring real-time countdown timers, automatic local state persistence, and seamless online/offline transition handling.
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 my-8">
+                    <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <span class="text-xs text-slate-400 font-medium block">Question Bank</span>
+                        <span id="loginStatQuestions" class="text-2xl sm:text-3xl font-extrabold text-white mono mt-2 block">4</span>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <span class="text-xs text-slate-400 font-medium block">Duration</span>
+                        <span id="loginStatDuration" class="text-2xl sm:text-3xl font-extrabold text-indigo-400 mono mt-2 block">30m</span>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <span class="text-xs text-slate-400 font-medium block">Candidates</span>
+                        <span id="loginStatStudents" class="text-2xl sm:text-3xl font-extrabold text-emerald-400 mono mt-2 block">4</span>
+                    </div>
+                    <div class="p-5 rounded-2xl bg-slate-900/90 border border-slate-800">
+                        <span class="text-xs text-slate-400 font-medium block">Connection</span>
+                        <span id="loginStatMode" class="text-xl sm:text-2xl font-extrabold text-white mono mt-2 block">ONLINE</span>
+                    </div>
+                </div>
+
+                <div class="p-6 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-3">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-indigo-400"></i> Official Examination Instructions
+                    </h3>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs text-slate-400">
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Timer starts immediately upon launching the exam.</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> All responses auto-save locally and sync when online.</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Use CLR to clear any response prior to final submission.</li>
+                        <li class="flex items-center gap-2"><i class="fa-solid fa-check text-emerald-400"></i> Exam auto-submits when the countdown reaches 00:00:00.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="lg:col-span-5 bg-slate-900/50 p-8 sm:p-12 lg:p-16 flex flex-col justify-center">
+                <div class="w-full max-w-lg mx-auto space-y-8">
+                    <div class="space-y-2">
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Portal Authentication</h2>
+                        <p class="text-sm text-slate-400">Select your access role and enter your credentials to continue.</p>
                     </div>
 
-                    <!-- Role Selector Pill Tabs -->
-                    <div class="grid grid-cols-3 bg-slate-950 p-1 rounded-xl border border-slate-800/80">
-                        <button type="button" onclick="app.setRole('Student')" id="roleBtn_Student" class="py-2 rounded-lg text-xs font-semibold transition">Student</button>
-                        <button type="button" onclick="app.setRole('Teacher')" id="roleBtn_Teacher" class="py-2 rounded-lg text-xs font-semibold transition">Teacher</button>
-                        <button type="button" onclick="app.setRole('Admin')" id="roleBtn_Admin" class="py-2 rounded-lg text-xs font-semibold transition">Admin</button>
+                    <div class="grid grid-cols-3 gap-3 bg-slate-950 p-2 rounded-2xl border border-slate-800">
+                        <button type="button" onclick="app.setRole('Student')" id="roleBtn_Student" class="py-3.5 rounded-xl text-xs sm:text-sm font-bold transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-user-graduate text-base"></i>
+                            <span>Student</span>
+                        </button>
+                        <button type="button" onclick="app.setRole('Teacher')" id="roleBtn_Teacher" class="py-3.5 rounded-xl text-xs sm:text-sm font-bold transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-chalkboard-user text-base"></i>
+                            <span>Teacher</span>
+                        </button>
+                        <button type="button" onclick="app.setRole('Admin')" id="roleBtn_Admin" class="py-3.5 rounded-xl text-xs sm:text-sm font-bold transition flex flex-col items-center gap-1.5">
+                            <i class="fa-solid fa-user-shield text-base"></i>
+                            <span>Admin</span>
+                        </button>
                     </div>
 
-                    <!-- Inline Login Error -->
-                    <div id="loginError" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs text-center font-medium"></div>
+                    <div id="loginError" class="hidden p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold text-center"></div>
 
-                    <!-- Form -->
-                    <form onsubmit="app.login(event)" class="space-y-4">
+                    <form onsubmit="app.login(event)" class="space-y-5">
                         <div>
-                            <label for="loginId" class="block text-xs font-medium text-slate-300 mb-1.5">User ID</label>
-                            <input type="text" id="loginId" required autocomplete="username" placeholder="Enter User ID"
-                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                            <label for="loginId" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">User ID</label>
+                            <input type="text" id="loginId" required autocomplete="username" placeholder="Enter your ID"
+                                class="w-full px-4 py-4 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
                         </div>
 
                         <div>
-                            <label for="loginPw" class="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
-                            <input type="password" id="loginPw" required autocomplete="current-password" placeholder="Enter Password"
-                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                            <label for="loginPw" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Password</label>
+                            <input type="password" id="loginPw" required autocomplete="current-password" placeholder="Enter your password"
+                                class="w-full px-4 py-4 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
                         </div>
 
-                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/20 transition">
-                            Sign In
-                        </button>
-                    </form>
-
-                    <!-- Subtle Credentials Reference Link -->
-                    <div class="pt-2 border-t border-slate-800/60 text-center">
-                        <button type="button" onclick="app.openCredModal()" class="text-[11px] text-slate-400 hover:text-indigo-400 transition">
-                            <i class="fa-regular fa-circle-question mr-1"></i>System Credentials Reference
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= 2. STUDENT PORTAL ================= -->
-            <section id="viewStudent" class="hidden max-w-3xl mx-auto space-y-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Card 1: Examination -->
-                    <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl">
-                        <div class="space-y-4">
-                            <div class="flex items-center justify-between">
-                                <div>
-                                    <h2 class="text-base font-bold text-white">Examination</h2>
-                                    <p id="stuSubInfo" class="text-xs text-slate-400 mt-0.5"></p>
-                                </div>
-                                <span id="stuStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-medium">Not Taken</span>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-3 pt-1">
-                                <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                    <span class="text-[11px] text-slate-400 block">Duration</span>
-                                    <span id="stuDurationText" class="text-sm font-semibold text-white mono mt-0.5 block">30 Mins</span>
-                                </div>
-                                <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                                    <span class="text-[11px] text-slate-400 block">Total Questions</span>
-                                    <span id="stuQuestionCountText" class="text-sm font-semibold text-white mono mt-0.5 block">4</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button onclick="app.startOrResumeExam()" id="btnStartExam" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition disabled:opacity-40 disabled:pointer-events-none">
-                            Start Exam
-                        </button>
-                    </div>
-
-                    <!-- Card 2: My Result -->
-                    <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl">
-                        <div class="space-y-1">
-                            <h2 class="text-base font-bold text-white">My Result</h2>
-                            <p class="text-xs text-slate-400">Latest examination performance</p>
-                        </div>
-
-                        <div id="stuResultBox" class="flex-1 rounded-xl bg-slate-950/70 border border-slate-800/80 p-5 flex items-center justify-center text-center">
-                            <!-- Populated dynamically -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= 3. LIVE EXAM VIEW ================= -->
-            <section id="viewExam" class="hidden space-y-6">
-                <!-- Clean Header Bar -->
-                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-                    <div class="flex flex-wrap items-center gap-4">
-                        <div class="flex items-center gap-2.5">
-                            <i class="fa-regular fa-clock text-indigo-400 text-sm"></i>
-                            <span id="examTimerDisplay" class="text-sm font-semibold text-white mono">00h 30m 00s</span>
-                        </div>
-                        <span id="examModeBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium border">ONLINE</span>
-                        <span id="examSaveStatus" class="text-xs text-emerald-400 flex items-center gap-1.5">
-                            <i class="fa-solid fa-cloud-arrow-up text-[11px]"></i> Saved to local storage
-                        </span>
-                    </div>
-
-                    <div class="flex items-center gap-2.5">
-                        <button onclick="app.minimizeExamToDashboard()" class="px-3 py-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-300 text-xs font-medium transition" title="Progress and timer stay active">
-                            Portal
-                        </button>
-                        <button onclick="app.openSubmitModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">
-                            Submit Exam
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Main Exam Layout -->
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                    <!-- Left Area: Single Question Card -->
-                    <div class="lg:col-span-8 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
-                        <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
-                            <span id="examQHeader" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Question 1 of 4</span>
-                            <span id="examQTypeBadge" class="px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">MCQ</span>
-                        </div>
-
-                        <h3 id="examQText" class="text-lg font-semibold text-white leading-relaxed"></h3>
-
-                        <!-- MCQ Options -->
-                        <div id="examMcqArea" class="space-y-3 pt-1"></div>
-
-                        <!-- Written Textarea -->
-                        <div id="examWrittenArea" class="hidden pt-1">
-                            <textarea id="examWrittenInput" rows="4" placeholder="Write your answer here... (Auto-saved as you type)"
-                                oninput="app.handleWrittenInput(this.value)"
-                                class="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition"></textarea>
-                        </div>
-
-                        <!-- Bottom Navigation & Clear -->
-                        <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
-                            <button onclick="app.clearAnswer()" class="text-xs font-medium text-slate-400 hover:text-rose-400 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition">
-                                Clear Answer (CLR)
-                            </button>
-
-                            <div class="flex items-center gap-2.5">
-                                <button onclick="app.prevQ()" id="btnPrevQ" class="px-4 py-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition disabled:opacity-30 disabled:pointer-events-none">
-                                    Previous
-                                </button>
-                                <button onclick="app.nextQ()" id="btnNextQ" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition disabled:opacity-30 disabled:pointer-events-none">
-                                    Next
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right Area: Simple Question Palette -->
-                    <div class="lg:col-span-4 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-                        <div class="flex items-center justify-between">
-                            <h4 class="text-sm font-bold text-white">Question Palette</h4>
-                            <span id="examAnsweredCounter" class="text-xs text-slate-400">0/4 Answered</span>
-                        </div>
-
-                        <div id="examPalette" class="grid grid-cols-4 gap-2.5 pt-1"></div>
-
-                        <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
-                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-indigo-600"></span> Current</span>
-                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500/30 border border-emerald-500/50"></span> Answered</span>
-                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-slate-950 border border-slate-800"></span> Empty</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ================= 4. TEACHER PORTAL ================= -->
-            <section id="viewTeacher" class="hidden space-y-6">
-                <!-- Clean Top Tab Bar -->
-                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-                    <h2 class="text-base font-bold text-white">Teacher Portal</h2>
-                    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80">
-                        <button onclick="app.setTeacherTab('questions')" id="tTab_questions" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Questions</button>
-                        <button onclick="app.setTeacherTab('students')" id="tTab_students" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Students</button>
-                        <button onclick="app.setTeacherTab('settings')" id="tTab_settings" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Timing</button>
-                    </div>
-                </div>
-
-                <!-- Tab 1: Questions -->
-                <div id="tPane_questions" class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h3 class="text-sm font-bold text-white">Question Bank</h3>
-                            <p class="text-xs text-slate-400">Manage multiple-choice and written questions</p>
-                        </div>
-                        <button onclick="app.openQuestionModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
-                            + Add Question
-                        </button>
-                    </div>
-
-                    <div id="teacherQuestionsList" class="divide-y divide-slate-800/80"></div>
-                </div>
-
-                <!-- Tab 2: Students -->
-                <div id="tPane_students" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
-                    <div>
-                        <h3 class="text-sm font-bold text-white">Student Status</h3>
-                        <p class="text-xs text-slate-400">View progress or unlock completed exams for re-attempt</p>
-                    </div>
-
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase text-slate-400">
-                                    <th class="py-3 px-4">Student ID</th>
-                                    <th class="py-3 px-4">Name</th>
-                                    <th class="py-3 px-4">Roll No</th>
-                                    <th class="py-3 px-4">Exam Status</th>
-                                    <th class="py-3 px-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teacherStudentsBody" class="divide-y divide-slate-800/60 text-xs"></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Tab 3: Timing -->
-                <div id="tPane_settings" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl max-w-md space-y-5">
-                    <div>
-                        <h3 class="text-sm font-bold text-white">Exam Timing</h3>
-                        <p class="text-xs text-slate-400">Set the time limit in minutes (1 to 1440)</p>
-                    </div>
-
-                    <form onsubmit="app.saveDuration(event)" class="space-y-4">
-                        <div>
-                            <label for="durationInput" class="block text-xs font-medium text-slate-300 mb-1.5">Duration (Minutes)</label>
-                            <input type="number" id="durationInput" min="1" max="1440" required
-                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
-                        </div>
-                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
-                            Save Duration
+                        <button type="submit" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-xl shadow-indigo-600/25 transition flex items-center justify-center gap-2">
+                            <span>Sign In to Portal</span>
+                            <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </form>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- ================= 5. ADMIN PORTAL ================= -->
-            <section id="viewAdmin" class="hidden space-y-6">
-                <!-- Clean Top Tab Bar -->
-                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 shadow-xl">
-                    <h2 class="text-base font-bold text-white">Admin Portal</h2>
-                    <div class="flex flex-wrap bg-slate-950 p-1 rounded-xl border border-slate-800/80 gap-1">
-                        <button onclick="window.app.setAdminTab('results')" id="aTab_results" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Results</button>
-                        <button onclick="window.app.setAdminTab('register')" id="aTab_register" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Register Student</button>
-                        <button onclick="window.app.setAdminTab('sheets')" id="aTab_sheets" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Answer Sheets</button>
-                        <button onclick="window.app.setAdminTab('logs')" id="aTab_logs" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Activity Log</button>
-                        <button onclick="window.app.setAdminTab('system')" id="aTab_system" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">System</button>
+        <section id="viewStudent" class="hidden w-full h-full grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden">
+            <div class="lg:col-span-4 bg-slate-950 p-8 border-b lg:border-b-0 lg:border-r border-slate-800 flex flex-col justify-between">
+                <div class="space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-bold uppercase tracking-wider">
+                        Candidate Workspace
                     </div>
-                </div>
-
-                <!-- Tab 1: Results -->
-                <div id="aPane_results" class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
                     <div>
-                        <h3 class="text-sm font-bold text-white">Examination Results</h3>
-                        <p class="text-xs text-slate-400">All submitted student scores</p>
+                        <h2 id="stuWelcomeName" class="text-2xl sm:text-3xl font-extrabold text-white"></h2>
+                        <p id="stuSubInfo" class="text-sm text-slate-400 mono mt-1"></p>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase text-slate-400">
-                                    <th class="py-3 px-4">Student ID</th>
-                                    <th class="py-3 px-4">Name</th>
-                                    <th class="py-3 px-4">Roll No</th>
-                                    <th class="py-3 px-4">Score</th>
-                                    <th class="py-3 px-4">Date</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminResultsBody" class="divide-y divide-slate-800/60 text-xs"></tbody>
-                        </table>
+                    <div class="grid grid-cols-2 gap-4 pt-2">
+                        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                            <span class="text-xs text-slate-400 block">Time Allowed</span>
+                            <span id="stuDurationText" class="text-xl font-extrabold text-white mono mt-1 block">30 Mins</span>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+                            <span class="text-xs text-slate-400 block">Total Questions</span>
+                            <span id="stuQuestionCountText" class="text-xl font-extrabold text-white mono mt-1 block">4</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Tab 2: Register Student -->
-                <div id="aPane_register" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl max-w-md space-y-5">
-                    <div>
-                        <h3 class="text-sm font-bold text-white">Register Student</h3>
-                        <p class="text-xs text-slate-400">Create a new student account (saved to persistent storage)</p>
-                    </div>
-
-                    <form onsubmit="app.registerStudent(event)" class="space-y-4">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Student ID</label>
-                            <input type="text" id="regId" required placeholder="e.g. STU005"
-                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Full Name</label>
-                            <input type="text" id="regName" required placeholder="Student Name"
-                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Roll No</label>
-                            <input type="text" id="regRoll" required placeholder="e.g. CS105"
-                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
-                            <input type="password" id="regPw" required placeholder="Set password"
-                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
-                        </div>
-                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
-                            Register Student
-                        </button>
-                    </form>
+                <div class="p-5 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-2 mt-6">
+                    <div class="text-xs font-bold text-slate-300 uppercase tracking-wider">Session Persistence</div>
+                    <p class="text-xs text-slate-400 leading-relaxed">Your progress and countdown timer are continuously backed up to local storage. If your connection drops or the browser closes, reopen this page to resume seamlessly.</p>
                 </div>
+            </div>
 
-                <!-- Tab 3: Answer Sheets -->
-                <div id="aPane_sheets" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
+            <div class="lg:col-span-8 bg-slate-900/40 p-8 flex flex-col justify-between gap-6 overflow-y-auto">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex-1 flex flex-col justify-between">
                     <div class="flex flex-wrap items-center justify-between gap-4">
                         <div>
-                            <h3 class="text-sm font-bold text-white">Student Answer Sheets</h3>
-                            <p class="text-xs text-slate-400">Inspect recorded responses and whether they were answered Online or Offline</p>
+                            <h3 class="text-xl font-extrabold text-white">Examination Launchpad</h3>
+                            <p class="text-xs text-slate-400 mt-1">Start or resume your scheduled examination session</p>
+                        </div>
+                        <span id="stuStatusBadge" class="px-4 py-1.5 rounded-full text-xs font-bold">Not Taken</span>
+                    </div>
+
+                    <div class="my-6 p-5 rounded-xl bg-slate-950 border border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-500 block">Question Formats</span>
+                            <span class="text-slate-200 font-semibold mt-0.5 block">Multiple Choice & Written</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Submission Policy</span>
+                            <span class="text-slate-200 font-semibold mt-0.5 block">Single Final Submission</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-500 block">Auto-Submit</span>
+                            <span class="text-slate-200 font-semibold mt-0.5 block">Enabled at 00h 00m 00s</span>
+                        </div>
+                    </div>
+
+                    <button onclick="app.startOrResumeExam()" id="btnStartExam" class="w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/20 transition disabled:opacity-40 disabled:pointer-events-none">
+                        Start Examination Now
+                    </button>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex-1 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-white">Official Result Transcript</h3>
+                        <p class="text-xs text-slate-400 mt-1">Latest graded performance for your Student ID</p>
+                    </div>
+
+                    <div id="stuResultBox" class="mt-4 flex-1 rounded-xl bg-slate-950 border border-slate-800 p-6 flex items-center justify-center text-center"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="viewExam" class="hidden w-full h-full flex flex-col overflow-hidden">
+            <div class="bg-slate-900 border-b border-slate-800 px-6 py-3.5 flex flex-wrap items-center justify-between gap-4 shrink-0">
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center gap-2.5 bg-slate-950 px-4 py-2 rounded-xl border border-slate-800">
+                        <i class="fa-regular fa-clock text-indigo-400"></i>
+                        <span id="examTimerDisplay" class="text-base font-extrabold text-white mono">00h 30m 00s</span>
+                    </div>
+                    <span id="examModeBadge" class="px-3 py-1.5 rounded-xl text-xs font-bold border">ONLINE</span>
+                    <span id="examSaveStatus" class="text-xs text-emerald-400 font-semibold flex items-center gap-1.5">
+                        <i class="fa-solid fa-check"></i> Saved
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="app.minimizeExamToDashboard()" class="px-4 py-2 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-200 text-xs font-bold transition">
+                        Back to Portal
+                    </button>
+                    <button onclick="app.openSubmitModal()" class="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition">
+                        Submit Exam (X)
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 w-full grid grid-cols-1 lg:grid-cols-12 overflow-y-auto lg:overflow-hidden">
+                <div class="lg:col-span-8 bg-slate-950 p-6 sm:p-10 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800 overflow-y-auto">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+                            <span id="examQHeader" class="text-xs font-extrabold text-indigo-400 uppercase tracking-wider">Question 1 of 4</span>
+                            <span id="examQTypeBadge" class="px-3 py-1 rounded-lg text-xs font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">Multiple Choice</span>
+                        </div>
+
+                        <h3 id="examQText" class="text-xl sm:text-2xl font-bold text-white leading-relaxed"></h3>
+
+                        <div id="examMcqArea" class="grid grid-cols-1 gap-3.5 pt-2"></div>
+
+                        <div id="examWrittenArea" class="hidden pt-2">
+                            <textarea id="examWrittenInput" rows="7" placeholder="Type your written response here... (Auto-saved immediately)"
+                                oninput="app.handleWrittenInput(this.value)"
+                                class="w-full p-5 rounded-2xl bg-slate-900 border border-slate-800 text-white text-base placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="pt-6 mt-6 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
+                        <button onclick="app.clearAnswer()" class="px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-bold transition">
+                            Clear Response (CLR)
+                        </button>
+
+                        <div class="flex items-center gap-3">
+                            <button onclick="app.prevQ()" id="btnPrevQ" class="px-5 py-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-bold transition disabled:opacity-30 disabled:pointer-events-none">
+                                <i class="fa-solid fa-arrow-left mr-1.5"></i> Previous
+                            </button>
+                            <button onclick="app.nextQ()" id="btnNextQ" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition disabled:opacity-30 disabled:pointer-events-none">
+                                Next <i class="fa-solid fa-arrow-right ml-1.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4 bg-slate-900/60 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto">
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-extrabold text-white uppercase tracking-wider">Question Palette</h4>
+                            <span id="examAnsweredCounter" class="text-xs font-bold text-indigo-400 mono">0/4 Answered</span>
+                        </div>
+
+                        <div id="examPalette" class="grid grid-cols-4 sm:grid-cols-5 gap-3"></div>
+
+                        <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2.5 text-xs text-slate-400">
+                            <div class="flex items-center justify-between">
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-indigo-600 inline-block"></span> Current Question</span>
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/50 inline-block"></span> Answered</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-slate-900 border border-slate-800 inline-block"></span> Not Answered</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form onsubmit="app.runQuickCommand(event)" class="pt-6 border-t border-slate-800 space-y-2">
+                        <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Command Console (e.g. 1 B, CLR 1, N, X)</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="quickCmdInput" placeholder="Type command..."
+                                class="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs mono focus:outline-none focus:border-indigo-500">
+                            <button type="submit" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-indigo-600 text-white text-xs font-bold transition">Run</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="viewTeacher" class="hidden w-full h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+            <aside class="lg:col-span-3 bg-slate-950 border-b lg:border-b-0 lg:border-r border-slate-800 p-6 flex flex-col justify-between">
+                <div class="space-y-6">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Instructor Workspace</span>
+                        <h2 class="text-xl font-extrabold text-white mt-0.5">Teacher Portal</h2>
+                    </div>
+
+                    <nav class="space-y-2">
+                        <button onclick="app.setTeacherTab('questions')" id="tTab_questions" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-list-check w-4"></i> Question Bank
+                        </button>
+                        <button onclick="app.setTeacherTab('students')" id="tTab_students" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-users w-4"></i> Candidate Status & Unlocks
+                        </button>
+                        <button onclick="app.setTeacherTab('settings')" id="tTab_settings" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-clock w-4"></i> Exam Duration Settings
+                        </button>
+                    </nav>
+                </div>
+
+                <div class="hidden lg:block p-4 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-400">
+                    Changes to questions, durations, or candidate locks take effect immediately.
+                </div>
+            </aside>
+
+            <div class="lg:col-span-9 bg-slate-900/40 p-6 sm:p-10 overflow-y-auto">
+                <div id="tPane_questions" class="space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                        <div>
+                            <h3 class="text-xl font-extrabold text-white">Question Repository</h3>
+                            <p class="text-xs text-slate-400">Add, edit, or remove Multiple Choice and Written questions</p>
+                        </div>
+                        <button onclick="app.openQuestionModal()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-600/20 transition">
+                            + Add New Question
+                        </button>
+                    </div>
+
+                    <div id="teacherQuestionsList" class="divide-y divide-slate-800 bg-slate-900 border border-slate-800 rounded-2xl px-6"></div>
+                </div>
+
+                <div id="tPane_students" class="hidden space-y-6">
+                    <div class="pb-4 border-b border-slate-800">
+                        <h3 class="text-xl font-extrabold text-white">Candidate Status & Re-Exam Controls</h3>
+                        <p class="text-xs text-slate-400">Monitor progress or remove completion blocks so a student can retake the exam</p>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 bg-slate-950/60 text-[11px] font-bold uppercase text-slate-400">
+                                    <th class="py-4 px-6">Student ID</th>
+                                    <th class="py-4 px-6">Full Name</th>
+                                    <th class="py-4 px-6">Roll No</th>
+                                    <th class="py-4 px-6">Current Status</th>
+                                    <th class="py-4 px-6 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacherStudentsBody" class="divide-y divide-slate-800 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="tPane_settings" class="hidden max-w-xl space-y-6">
+                    <div class="pb-4 border-b border-slate-800">
+                        <h3 class="text-xl font-extrabold text-white">Examination Duration</h3>
+                        <p class="text-xs text-slate-400">Configure total allowed time in minutes (1 to 1440)</p>
+                    </div>
+
+                    <form onsubmit="app.saveDuration(event)" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-5">
+                        <div>
+                            <label for="durationInput" class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-2">Duration (Minutes)</label>
+                            <input type="number" id="durationInput" min="1" max="1440" required
+                                class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <button type="submit" class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">
+                            Update Duration
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="viewAdmin" class="hidden w-full h-full grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
+            <aside class="lg:col-span-3 bg-slate-950 border-b lg:border-b-0 lg:border-r border-slate-800 p-6 flex flex-col justify-between">
+                <div class="space-y-6">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-400">Superuser Console</span>
+                        <h2 class="text-xl font-extrabold text-white mt-0.5">Admin Portal</h2>
+                    </div>
+
+                    <nav class="space-y-2">
+                        <button onclick="window.app.setAdminTab('results')" id="aTab_results" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-square-poll-vertical w-4"></i> Examination Results
+                        </button>
+                        <button onclick="window.app.setAdminTab('sheets')" id="aTab_sheets" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-file-lines w-4"></i> Student Answer Sheets
+                        </button>
+                        <button onclick="window.app.setAdminTab('register')" id="aTab_register" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-user-plus w-4"></i> Register New Student
+                        </button>
+                        <button onclick="window.app.setAdminTab('logs')" id="aTab_logs" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-terminal w-4"></i> Activity Audit Log
+                        </button>
+                        <button onclick="window.app.setAdminTab('system')" id="aTab_system" class="w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 transition">
+                            <i class="fa-solid fa-server w-4"></i> System & Storage
+                        </button>
+                    </nav>
+                </div>
+            </aside>
+
+            <div class="lg:col-span-9 bg-slate-900/40 p-6 sm:p-10 overflow-y-auto">
+                <div id="aPane_results" class="space-y-6">
+                    <div class="pb-4 border-b border-slate-800">
+                        <h3 class="text-xl font-extrabold text-white">All Examination Results</h3>
+                        <p class="text-xs text-slate-400">Complete grade ledger across all submitted exams</p>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 bg-slate-950/60 text-[11px] font-bold uppercase text-slate-400">
+                                    <th class="py-4 px-6">Student ID</th>
+                                    <th class="py-4 px-6">Full Name</th>
+                                    <th class="py-4 px-6">Roll No</th>
+                                    <th class="py-4 px-6">Score</th>
+                                    <th class="py-4 px-6">Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminResultsBody" class="divide-y divide-slate-800 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="aPane_sheets" class="hidden space-y-6">
+                    <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-800">
+                        <div>
+                            <h3 class="text-xl font-extrabold text-white">Student Answer Sheets</h3>
+                            <p class="text-xs text-slate-400">Inspect individual answers and network mode tags (ON / OFF)</p>
                         </div>
                         <select id="adminSheetSelect" onchange="app.renderAdminSheet()"
-                            class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500">
+                            class="px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs font-bold focus:outline-none focus:border-indigo-500">
                         </select>
                     </div>
 
-                    <div id="adminSheetContent" class="divide-y divide-slate-800/60"></div>
+                    <div id="adminSheetContent" class="divide-y divide-slate-800 bg-slate-900 border border-slate-800 rounded-2xl px-6"></div>
                 </div>
 
-                <!-- Tab 4: Activity Log -->
-                <div id="aPane_logs" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
-                    <div>
-                        <h3 class="text-sm font-bold text-white">Activity Log</h3>
-                        <p class="text-xs text-slate-400">Recent system audit events (`audit.log`)</p>
+                <div id="aPane_register" class="hidden max-w-xl space-y-6">
+                    <div class="pb-4 border-b border-slate-800">
+                        <h3 class="text-xl font-extrabold text-white">Register Student Account</h3>
+                        <p class="text-xs text-slate-400">Add a new candidate to the persistent database</p>
                     </div>
 
-                    <div id="adminLogsList" class="divide-y divide-slate-800/60 max-h-96 overflow-y-auto"></div>
-                </div>
-
-                <!-- Tab 5: System & Storage Reset -->
-                <div id="aPane_system" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-6 max-w-xl">
-                    <div class="space-y-1">
-                        <h3 class="text-sm font-bold text-white">System Status & Storage</h3>
-                        <p class="text-xs text-slate-400">Manage persistent local storage and network states</p>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                        <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-                            <span class="text-slate-400 block">Browser Network (`navigator.onLine`)</span>
-                            <span id="sysRealNet" class="font-semibold text-white mono block">ONLINE</span>
-                        </div>
-                        <div class="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-1">
-                            <span class="text-slate-400 block">Effective App Mode</span>
-                            <span id="sysEffectiveNet" class="font-semibold text-white mono block">ONLINE</span>
-                        </div>
-                    </div>
-
-                    <div class="pt-4 border-t border-slate-800 flex items-center justify-between gap-4">
+                    <form onsubmit="app.registerStudent(event)" class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                         <div>
-                            <h4 class="text-xs font-bold text-rose-400">Reset All Saved Data</h4>
-                            <p class="text-[11px] text-slate-400">Wipes all custom questions, results, and sessions back to default seed data.</p>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Student ID</label>
+                            <input type="text" id="regId" required placeholder="e.g. STU005"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500">
                         </div>
-                        <button onclick="app.resetAllData()" class="px-4 py-2 rounded-xl bg-rose-500/15 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-rose-300 text-xs font-semibold transition shrink-0">
-                            Reset Storage
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Full Name</label>
+                            <input type="text" id="regName" required placeholder="Candidate Name"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Roll Number</label>
+                            <input type="text" id="regRoll" required placeholder="e.g. CS105"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">Password</label>
+                            <input type="password" id="regPw" required placeholder="Assign login password"
+                                class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500">
+                        </div>
+                        <button type="submit" class="w-full py-3.5 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition">
+                            Register Candidate
+                        </button>
+                    </form>
+                </div>
+
+                <div id="aPane_logs" class="hidden space-y-6">
+                    <div class="pb-4 border-b border-slate-800">
+                        <h3 class="text-xl font-extrabold text-white">System Audit Log</h3>
+                        <p class="text-xs text-slate-400">Chronological record of authentication, exam, and administrative events</p>
+                    </div>
+
+                    <div id="adminLogsList" class="divide-y divide-slate-800 bg-slate-900 border border-slate-800 rounded-2xl px-6"></div>
+                </div>
+
+                <div id="aPane_system" class="hidden max-w-2xl space-y-6">
+                    <div class="pb-4 border-b border-slate-800">
+                        <h3 class="text-xl font-extrabold text-white">System Telemetry & Storage</h3>
+                        <p class="text-xs text-slate-400">Inspect connectivity status or reset local database state</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span class="text-xs text-slate-400 block">Browser Network State</span>
+                            <span id="sysRealNet" class="text-sm font-bold text-white mono block">ONLINE</span>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+                            <span class="text-xs text-slate-400 block">Application Operating Mode</span>
+                            <span id="sysEffectiveNet" class="text-sm font-bold text-white mono block">ONLINE</span>
+                        </div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4">
+                        <div>
+                            <h4 class="text-sm font-bold text-rose-400">Factory Reset Local Storage</h4>
+                            <p class="text-xs text-slate-400 mt-0.5">Restores default questions, students, and clears all results.</p>
+                        </div>
+                        <button onclick="app.resetAllData()" class="px-5 py-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-rose-300 text-xs font-bold transition shrink-0">
+                            Reset Data
                         </button>
                     </div>
                 </div>
-            </section>
+            </div>
+        </section>
 
-        </div>
     </main>
 
-    <!-- ================= MODAL: SYSTEM CREDENTIALS REFERENCE ================= -->
-    <div id="credModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between">
-                <h3 class="text-sm font-bold text-white">Default System Credentials</h3>
-                <button onclick="app.closeCredModal()" class="text-slate-400 hover:text-white">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-            <div class="space-y-3 text-xs">
-                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <div class="font-semibold text-indigo-400">Student Accounts</div>
-                    <div class="text-slate-300 mono">ID: <span class="text-white">STU001</span>, <span class="text-white">STU002</span>, <span class="text-white">STU003</span>, or <span class="text-white">STU004</span></div>
-                    <div class="text-slate-400">Password: Any non-empty password (for default demo students)</div>
-                </div>
-                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <div class="font-semibold text-emerald-400">Teacher Account</div>
-                    <div class="text-slate-300 mono">ID: <span class="text-white">890teach</span> &nbsp;|&nbsp; Password: <span class="text-white">teacher123</span></div>
-                </div>
-                <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1">
-                    <div class="font-semibold text-amber-400">Admin Account</div>
-                    <div class="text-slate-300 mono">ID: <span class="text-white">admin_sys</span> &nbsp;|&nbsp; Password: <span class="text-white">admin123</span></div>
-                </div>
-            </div>
-            <div class="pt-1 flex justify-end">
-                <button onclick="app.closeCredModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold transition">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= MODAL: ADD / EDIT QUESTION ================= -->
-    <div id="questionModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div id="questionModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
             <div class="flex items-center justify-between">
-                <h3 id="qModalTitle" class="text-base font-bold text-white">Add Question</h3>
+                <h3 id="qModalTitle" class="text-base font-extrabold text-white">Add Question</h3>
                 <button onclick="app.closeQuestionModal()" class="text-slate-400 hover:text-white">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
@@ -497,7 +557,7 @@
                 <input type="hidden" id="qEditIndex" value="-1">
 
                 <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Question Type</label>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">Question Format</label>
                     <select id="qTypeInput" onchange="app.toggleQuestionModalType()"
                         class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500">
                         <option value="M">Multiple Choice (MCQ)</option>
@@ -506,12 +566,11 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Question Text</label>
-                    <textarea id="qTextInput" rows="2" required placeholder="Enter question..."
-                        class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                    <label class="block text-xs font-bold text-slate-300 mb-1.5">Question Prompt</label>
+                    <textarea id="qTextInput" rows="2" required placeholder="Enter question text..."
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"></textarea>
                 </div>
 
-                <!-- MCQ Fields -->
                 <div id="qMcqFields" class="space-y-3">
                     <div class="grid grid-cols-2 gap-2.5">
                         <div>
@@ -532,7 +591,7 @@
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Correct Option</label>
+                        <label class="block text-xs font-bold text-slate-300 mb-1">Correct Option</label>
                         <select id="qCorrectMcq" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
                             <option value="A">Option A</option>
                             <option value="B">Option B</option>
@@ -542,44 +601,40 @@
                     </div>
                 </div>
 
-                <!-- Written Field -->
                 <div id="qWrittenField" class="hidden">
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Expected Keyword / Phrase</label>
+                    <label class="block text-xs font-bold text-slate-300 mb-1">Expected Keyword / Phrase</label>
                     <input type="text" id="qCorrectWritten" placeholder="e.g. Data hiding"
-                        class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
                 </div>
 
                 <div class="pt-2 flex justify-end gap-2">
-                    <button type="button" onclick="app.closeQuestionModal()" class="px-4 py-2 rounded-xl border border-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-800">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Save Question</button>
+                    <button type="button" onclick="app.closeQuestionModal()" class="px-4 py-2 rounded-xl border border-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-800">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold">Save Question</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- ================= MODAL: CONFIRM EXAM SUBMIT ================= -->
-    <div id="submitModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div id="submitModal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-5 text-center">
-            <div class="w-11 h-11 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                <i class="fa-solid fa-check"></i>
+            <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                <i class="fa-solid fa-check text-lg"></i>
             </div>
             <div class="space-y-1">
-                <h3 class="text-base font-bold text-white">Submit Examination?</h3>
-                <p class="text-xs text-slate-400 leading-relaxed">Once submitted, your answers are finalized and cannot be modified or cleared.</p>
+                <h3 class="text-base font-extrabold text-white">Submit Examination?</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Once submitted, your answers are locked and cannot be modified or cleared.</p>
             </div>
             <div class="flex gap-2.5 pt-1">
-                <button onclick="app.closeSubmitModal()" class="flex-1 py-2.5 rounded-xl border border-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition">Cancel</button>
-                <button onclick="app.finishExam(false)" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">Confirm Submit</button>
+                <button onclick="app.closeSubmitModal()" class="flex-1 py-2.5 rounded-xl border border-slate-800 text-slate-300 text-xs font-bold hover:bg-slate-800 transition">Cancel</button>
+                <button onclick="app.finishExam(false)" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">Confirm Submit</button>
             </div>
         </div>
     </div>
 
-    <!-- APPLICATION SCRIPT -->
     <script>
         const STORAGE_KEY = 'exam_system_v5_persistent_db';
 
         const appInstance = {
-            // Persistent state saved in localStorage
             state: {
                 simulatedOffline: false,
                 duration: 30,
@@ -588,17 +643,15 @@
                 results: [],
                 answers: {},
                 logs: [],
-                // Active session persistence so closing/reloading the tab never loses login or exam progress
                 activeSession: {
-                    user: null,         // { id, name, role }
-                    activeView: 'viewLogin', // 'viewLogin' | 'viewStudent' | 'viewExam' | 'viewTeacher' | 'viewAdmin'
+                    user: null,
+                    activeView: 'viewLogin',
                     currentQ: 0,
                     teacherTab: 'questions',
                     adminTab: 'results'
                 }
             },
 
-            // Runtime properties
             runtime: {
                 browserOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
                 selectedLoginRole: 'Student',
@@ -607,7 +660,6 @@
                 lastWarnSec: -1
             },
 
-            // Returns true only if both real Wi-Fi/internet is connected AND user hasn't toggled simulated offline mode
             isOnline() {
                 return Boolean(this.runtime.browserOnline && !this.state.simulatedOffline);
             },
@@ -617,23 +669,22 @@
                 this.setupNetworkListeners();
                 this.setupLifecycleListeners();
                 this.setRole('Student');
+                this.updateLoginTelemetry();
                 this.updateNetworkUI();
                 this.restoreActiveSession();
             },
 
-            // 1. REAL BROWSER NETWORK DETECTION + PERIODIC CONNECTIVITY CHECK
             setupNetworkListeners() {
                 window.addEventListener('online', () => {
                     this.runtime.browserOnline = true;
-                    this.handleConnectivityChange("Internet connection restored (ONLINE). Syncing local progress...");
+                    this.handleConnectivityChange("Connection restored (ONLINE). Syncing local progress...");
                 });
 
                 window.addEventListener('offline', () => {
                     this.runtime.browserOnline = false;
-                    this.handleConnectivityChange("Wi-Fi / Internet disconnected! Switched to OFFLINE local auto-save mode.");
+                    this.handleConnectivityChange("Network disconnected! Switched to OFFLINE local auto-save mode.");
                 });
 
-                // Lightweight periodic check in case navigator.onLine changes silently
                 setInterval(() => {
                     const currentBrowserStatus = navigator.onLine;
                     if (currentBrowserStatus !== this.runtime.browserOnline) {
@@ -649,23 +700,22 @@
 
             handleConnectivityChange(msg) {
                 this.updateNetworkUI();
+                this.updateLoginTelemetry();
                 this.logEvent(this.isOnline() ? "Network status: ONLINE" : "Network status: OFFLINE (Local Auto-Save)");
                 this.toast(msg);
             },
 
-            // 2. LIFECYCLE & TAB CLOSE PERSISTENCE
             setupLifecycleListeners() {
-                // Save immediately before tab closes or refreshes
                 window.addEventListener('beforeunload', () => {
                     this.saveState();
                 });
 
-                // Sync across tabs if user has another tab open
                 window.addEventListener('storage', (e) => {
                     if (e.key === STORAGE_KEY && e.newValue) {
                         try {
                             this.state = JSON.parse(e.newValue);
                             this.updateNetworkUI();
+                            this.updateLoginTelemetry();
                         } catch (_) {}
                     }
                 });
@@ -729,12 +779,25 @@
                     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
                     const saveIndicator = document.getElementById('examSaveStatus');
                     if (saveIndicator) {
-                        saveIndicator.innerHTML = `<i class="fa-solid fa-check text-[11px]"></i> Saved (${this.isOnline() ? 'Synced' : 'Local Disk'})`;
+                        saveIndicator.innerHTML = `<i class="fa-solid fa-check"></i> Saved (${this.isOnline() ? 'Synced' : 'Local Disk'})`;
                     }
                 } catch (e) {}
             },
 
-            // Restore logged-in portal or active live exam if user refreshes or reopens tab
+            updateLoginTelemetry() {
+                const qEl = document.getElementById('loginStatQuestions');
+                const dEl = document.getElementById('loginStatDuration');
+                const sEl = document.getElementById('loginStatStudents');
+                const mEl = document.getElementById('loginStatMode');
+                if (qEl) qEl.textContent = this.state.questions.length;
+                if (dEl) dEl.textContent = `${this.state.duration}m`;
+                if (sEl) sEl.textContent = this.state.students.length;
+                if (mEl) {
+                    mEl.textContent = this.isOnline() ? 'ONLINE' : 'OFFLINE';
+                    mEl.className = `text-xl sm:text-2xl font-extrabold mono mt-2 block ${this.isOnline() ? 'text-emerald-400' : 'text-amber-400'}`;
+                }
+            },
+
             restoreActiveSession() {
                 const sess = this.state.activeSession;
                 if (!sess || !sess.user) {
@@ -755,7 +818,6 @@
                         this.logout();
                         return;
                     }
-                    // If the student was inside the live exam when they closed the browser, resume it automatically
                     if (sess.activeView === 'viewExam' && stu.status === 1) {
                         this.startOrResumeExam(true);
                     } else {
@@ -798,21 +860,21 @@
                 const area = document.getElementById('toastArea');
                 if (!area) return;
                 const el = document.createElement('div');
-                el.className = 'px-4 py-3 rounded-xl bg-slate-900/95 border border-slate-700 text-xs font-medium text-slate-100 shadow-2xl transition';
+                el.className = 'px-4 py-3 rounded-xl bg-slate-900/95 border border-slate-700 text-xs font-semibold text-slate-100 shadow-2xl transition';
                 el.textContent = msg;
                 area.appendChild(el);
                 setTimeout(() => el.remove(), 3500);
             },
 
-            // Manual toggle to test offline behavior even when Wi-Fi is on
             toggleSimulateOffline() {
                 this.state.simulatedOffline = !this.state.simulatedOffline;
                 this.saveState();
                 this.updateNetworkUI();
+                this.updateLoginTelemetry();
                 if (this.isOnline()) {
                     this.toast("Mode: ONLINE (Connected & Synced)");
                 } else {
-                    this.toast("Mode: OFFLINE (Simulated Disconnect — Local Save Active)");
+                    this.toast("Mode: OFFLINE (Local Auto-Save Active)");
                 }
             },
 
@@ -829,29 +891,29 @@
                     banner.classList.toggle('hidden', online);
                     if (!online && bannerText) {
                         bannerText.textContent = !this.runtime.browserOnline
-                            ? "Real network connection lost (Wi-Fi/Internet offline) — All exam answers and progress are automatically saved in local storage."
-                            : "Simulated Offline Mode active (Click 'Offline' pill in top bar to reconnect) — Progress is saved locally.";
+                            ? "Network connection lost — All exam answers and progress are automatically saved in local storage."
+                            : "Offline Mode active — All exam answers and progress are saved locally.";
                     }
                 }
 
                 if (btn) {
                     if (online) {
-                        btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-emerald-500/10 border-emerald-500/20 text-emerald-300 transition cursor-pointer";
-                        dot.className = "w-2 h-2 rounded-full bg-emerald-400";
-                        label.textContent = "Online";
+                        btn.className = "flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-bold border bg-emerald-500/10 border-emerald-500/25 text-emerald-300 transition cursor-pointer";
+                        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+                        label.textContent = "ONLINE";
                     } else {
-                        btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-amber-500/15 border-amber-500/30 text-amber-300 transition cursor-pointer";
-                        dot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
-                        label.textContent = !this.runtime.browserOnline ? "Offline (No Wi-Fi)" : "Offline (Simulated)";
+                        btn.className = "flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-bold border bg-amber-500/15 border-amber-500/30 text-amber-300 transition cursor-pointer";
+                        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+                        label.textContent = !this.runtime.browserOnline ? "OFFLINE (NO WI-FI)" : "OFFLINE";
                     }
                 }
 
                 if (examBadge) {
                     if (online) {
-                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-300";
+                        examBadge.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-500/10 border border-emerald-500/20 text-emerald-300";
                         examBadge.textContent = "ONLINE";
                     } else {
-                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/15 border border-amber-500/30 text-amber-300";
+                        examBadge.className = "px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300";
                         examBadge.textContent = "OFFLINE (LOCAL SAVE)";
                     }
                 }
@@ -868,9 +930,9 @@
                     const btn = document.getElementById('roleBtn_' + r);
                     if (!btn) return;
                     if (r === role) {
-                        btn.className = "py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition";
+                        btn.className = "py-3.5 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-lg shadow-indigo-600/25 transition flex flex-col items-center gap-1.5";
                     } else {
-                        btn.className = "py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition";
+                        btn.className = "py-3.5 rounded-xl text-xs sm:text-sm font-bold text-slate-400 hover:text-slate-200 transition flex flex-col items-center gap-1.5";
                     }
                 });
                 const err = document.getElementById('loginError');
@@ -899,7 +961,7 @@
                     const stu = this.state.students.find(s => s.id.toLowerCase() === id.toLowerCase());
                     if (!stu) {
                         this.logEvent("Login failed (Student)");
-                        this.showLoginError("Student ID not found. Use STU001 - STU004 or register via Admin.");
+                        this.showLoginError("Student ID not found.");
                         return;
                     }
                     if (stu.pw && stu.pw !== pw) {
@@ -916,7 +978,7 @@
                     const validPw = (pw === 'teacher123' || pw === 'admin123');
                     if (!validId || !validPw) {
                         this.logEvent("Login failed (Teacher)");
-                        this.showLoginError("Invalid Teacher credentials (use 890teach / teacher123).");
+                        this.showLoginError("Invalid Teacher credentials.");
                         return;
                     }
                     this.state.activeSession.user = { id, name: 'Teacher', role: 'Teacher' };
@@ -928,7 +990,7 @@
                     const validPw = (pw === 'admin123' || pw === 'master123');
                     if (!validId || !validPw) {
                         this.logEvent("Login failed (Admin)");
-                        this.showLoginError("Invalid Admin credentials (use admin_sys / admin123).");
+                        this.showLoginError("Invalid Admin credentials.");
                         return;
                     }
                     this.state.activeSession.user = { id, name: 'Admin', role: 'Admin' };
@@ -956,6 +1018,7 @@
                 this.saveState();
 
                 document.getElementById('navUserArea').classList.add('hidden');
+                this.updateLoginTelemetry();
                 this.showOnlyView('viewLogin');
             },
 
@@ -994,7 +1057,8 @@
                 const stu = this.state.students.find(s => s.id === user.id);
                 if (!stu) return;
 
-                document.getElementById('stuSubInfo').textContent = `${stu.id} • Roll: ${stu.roll}`;
+                document.getElementById('stuWelcomeName').textContent = stu.name;
+                document.getElementById('stuSubInfo').textContent = `ID: ${stu.id}  |  Roll No: ${stu.roll}`;
                 document.getElementById('stuDurationText').textContent = `${this.state.duration} Mins`;
                 document.getElementById('stuQuestionCountText').textContent = this.state.questions.length;
 
@@ -1002,20 +1066,20 @@
                 const btn = document.getElementById('btnStartExam');
 
                 if (stu.status === 0) {
-                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300";
+                    badge.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-slate-800 text-slate-300";
                     badge.textContent = "Not Taken";
-                    btn.textContent = "Start Exam";
+                    btn.textContent = "Start Examination Now";
                     btn.disabled = false;
                 } else if (stu.status === 1) {
                     const remainSec = Math.max(0, (stu.start + this.state.duration * 60) - this.nowSec());
-                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30";
+                    badge.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30";
                     badge.textContent = `In Progress (${this.fmtLeft(remainSec)})`;
-                    btn.textContent = "Resume Exam";
+                    btn.textContent = "Resume Examination";
                     btn.disabled = false;
                 } else {
-                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
-                    badge.textContent = "Completed";
-                    btn.textContent = "Exam Completed";
+                    badge.className = "px-4 py-1.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
+                    badge.textContent = "Completed & Locked";
+                    btn.textContent = "Examination Submitted";
                     btn.disabled = true;
                 }
 
@@ -1025,12 +1089,12 @@
                     const last = myResults[myResults.length - 1];
                     resBox.innerHTML = `
                         <div class="space-y-1">
-                            <div class="text-3xl font-bold text-white mono">${last.score} <span class="text-lg text-slate-500">/ ${last.total}</span></div>
+                            <div class="text-4xl font-extrabold text-white mono">${last.score} <span class="text-xl text-slate-500">/ ${last.total}</span></div>
                             <div class="text-xs text-slate-400">Submitted on ${last.time}</div>
                         </div>
                     `;
                 } else {
-                    resBox.innerHTML = `<span class="text-xs text-slate-500">No result available yet</span>`;
+                    resBox.innerHTML = `<span class="text-xs text-slate-500">No graded result available for your ID yet.</span>`;
                 }
             },
 
@@ -1052,7 +1116,6 @@
                     this.saveState();
                 }
 
-                // Exact C++ formula: me_.start() + ctx_.loadDuration() * 60 - Util::nowSec()
                 const remainSec = (stu.start + this.state.duration * 60) - now;
                 if (remainSec <= 0) {
                     this.finishExam(true);
@@ -1070,7 +1133,7 @@
                 if (!isRestoringAfterReload) {
                     this.logEvent(`Exam started/resumed: ${stu.id}`);
                 } else {
-                    this.toast(`Session restored! Resuming exam at Question ${this.state.activeSession.currentQ + 1}.`);
+                    this.toast(`Session restored at Question ${this.state.activeSession.currentQ + 1}.`);
                 }
 
                 this.showOnlyView('viewExam');
@@ -1110,7 +1173,7 @@
                 const ans = sheet[idx];
 
                 document.getElementById('examQHeader').textContent = `Question ${idx + 1} of ${qs.length}`;
-                document.getElementById('examQTypeBadge').textContent = q.type === 'W' ? 'Written' : 'MCQ';
+                document.getElementById('examQTypeBadge').textContent = q.type === 'W' ? 'Written / Subjective' : 'Multiple Choice';
                 document.getElementById('examQText').textContent = q.text;
 
                 const mcqArea = document.getElementById('examMcqArea');
@@ -1128,15 +1191,15 @@
                         const selected = ans && ans.choice === L;
                         return `
                             <button type="button" onclick="window.app.selectMcq('${L}')"
-                                class="w-full p-4 rounded-xl border text-left flex items-center gap-3.5 transition ${
+                                class="w-full p-4 sm:p-5 rounded-2xl border text-left flex items-center gap-4 transition ${
                                     selected
-                                    ? 'bg-indigo-600/15 border-indigo-500 text-white'
-                                    : 'bg-slate-950/70 border-slate-800/90 text-slate-300 hover:border-slate-700'
+                                    ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-lg shadow-indigo-600/10'
+                                    : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700'
                                 }">
-                                <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold mono ${
-                                    selected ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                                <span class="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-extrabold mono ${
+                                    selected ? 'bg-indigo-600 text-white' : 'bg-slate-950 text-slate-400 border border-slate-800'
                                 }">${L}</span>
-                                <span class="text-sm font-medium">${this.escapeHtml(q.options[i] || '')}</span>
+                                <span class="text-sm sm:text-base font-semibold">${this.escapeHtml(q.options[i] || '')}</span>
                             </button>
                         `;
                     }).join('');
@@ -1169,14 +1232,71 @@
 
                     return `
                         <button type="button" onclick="window.app.jumpToQ(${i})"
-                            class="h-10 rounded-xl border text-xs font-semibold mono transition ${cls}">
-                            ${i + 1}
+                            class="h-11 rounded-xl border text-xs font-bold mono transition ${cls}">
+                            Q${i + 1}
                         </button>
                     `;
                 }).join('');
 
                 document.getElementById('examPalette').innerHTML = html;
                 document.getElementById('examAnsweredCounter').textContent = `${answeredCount}/${qs.length} Answered`;
+            },
+
+            runQuickCommand(e) {
+                e.preventDefault();
+                const input = document.getElementById('quickCmdInput');
+                const raw = input.value.trim();
+                input.value = '';
+                if (!raw) return;
+
+                const upper = raw.toUpperCase();
+                if (upper === 'N' || upper === 'NET') {
+                    this.toggleSimulateOffline();
+                    return;
+                }
+                if (upper === 'V') {
+                    this.saveState();
+                    this.toast("Answers saved.");
+                    return;
+                }
+                if (upper === 'X') {
+                    this.openSubmitModal();
+                    return;
+                }
+                if (upper === 'CLR' || upper === 'CLEAR') {
+                    this.clearAnswer();
+                    this.toast(`Cleared Q${this.state.activeSession.currentQ + 1}`);
+                    return;
+                }
+                if (upper.startsWith('CLR ') || upper.startsWith('CLEAR ')) {
+                    const qNum = parseInt(upper.replace(/^(CLR|CLEAR)\s+/, ''), 10);
+                    if (qNum >= 1 && qNum <= this.state.questions.length) {
+                        const stuId = this.state.activeSession.user.id;
+                        if (this.state.answers[stuId]) delete this.state.answers[stuId][qNum - 1];
+                        this.saveState();
+                        this.renderExamQuestion();
+                        this.toast(`Cleared answer for Q${qNum}`);
+                    }
+                    return;
+                }
+
+                const match = upper.match(/^(\d+)\s*([A-D])?$/);
+                if (match) {
+                    const qNum = parseInt(match[1], 10);
+                    const choice = match[2];
+                    if (qNum >= 1 && qNum <= this.state.questions.length) {
+                        this.state.activeSession.currentQ = qNum - 1;
+                        if (choice && this.state.questions[qNum - 1].type === 'M') {
+                            this.selectMcq(choice);
+                            this.toast(`Recorded ${choice} for Q${qNum}`);
+                        } else {
+                            this.saveState();
+                            this.renderExamQuestion();
+                        }
+                        return;
+                    }
+                }
+                this.toast("Unknown command. Use <Q#> <A-D>, CLR <Q#>, N, or X.");
             },
 
             selectMcq(letter) {
@@ -1305,12 +1425,12 @@
                 ['questions', 'students', 'settings'].forEach(t => {
                     const btn = document.getElementById('tTab_' + t);
                     const pane = document.getElementById('tPane_' + t);
-                    if (!btn) return;
+                    if (!btn || !pane) return;
                     if (t === tab) {
-                        btn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+                        btn.className = "w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition";
                         pane.classList.remove('hidden');
                     } else {
-                        btn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition";
+                        btn.className = "w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition";
                         pane.classList.add('hidden');
                     }
                 });
@@ -1323,21 +1443,21 @@
             renderTeacherQuestions() {
                 const list = document.getElementById('teacherQuestionsList');
                 if (this.state.questions.length === 0) {
-                    list.innerHTML = `<div class="py-8 text-center text-xs text-slate-500">No questions in the bank.</div>`;
+                    list.innerHTML = `<div class="py-10 text-center text-xs text-slate-500">No questions in the bank.</div>`;
                     return;
                 }
 
                 list.innerHTML = this.state.questions.map((q, i) => `
-                    <div class="py-4 flex items-start justify-between gap-4">
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-bold text-indigo-400 mono">Q${i + 1}</span>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">${q.type === 'W' ? 'WRITTEN' : 'MCQ'}</span>
-                                <span class="text-[11px] text-emerald-400 mono">Key: ${this.escapeHtml(q.correct)}</span>
+                    <div class="py-5 flex items-start justify-between gap-4">
+                        <div class="space-y-1.5">
+                            <div class="flex items-center gap-2.5">
+                                <span class="text-xs font-extrabold text-indigo-400 mono">Q${i + 1}</span>
+                                <span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300">${q.type === 'W' ? 'WRITTEN' : 'MCQ'}</span>
+                                <span class="text-xs text-emerald-400 font-semibold mono">Key: ${this.escapeHtml(q.correct)}</span>
                             </div>
-                            <p class="text-sm font-medium text-white">${this.escapeHtml(q.text)}</p>
+                            <p class="text-sm font-bold text-white">${this.escapeHtml(q.text)}</p>
                             ${q.type === 'M' ? `
-                                <div class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                                <div class="text-xs text-slate-400 flex flex-wrap gap-x-5 gap-y-1 pt-1">
                                     <span>A) ${this.escapeHtml(q.options[0])}</span>
                                     <span>B) ${this.escapeHtml(q.options[1])}</span>
                                     <span>C) ${this.escapeHtml(q.options[2])}</span>
@@ -1346,8 +1466,8 @@
                             ` : ''}
                         </div>
                         <div class="flex items-center gap-2 shrink-0">
-                            <button onclick="window.app.openQuestionModal(${i})" class="px-2.5 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-xs text-slate-300 transition">Edit</button>
-                            <button onclick="window.app.deleteQuestion(${i})" class="px-2.5 py-1.5 rounded-lg border border-rose-500/20 hover:bg-rose-500/10 text-xs text-rose-400 transition">Delete</button>
+                            <button onclick="window.app.openQuestionModal(${i})" class="px-3 py-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-xs font-bold text-slate-300 transition">Edit</button>
+                            <button onclick="window.app.deleteQuestion(${i})" class="px-3 py-1.5 rounded-xl border border-rose-500/30 hover:bg-rose-500/15 text-xs font-bold text-rose-400 transition">Delete</button>
                         </div>
                     </div>
                 `).join('');
@@ -1425,7 +1545,7 @@
                 this.saveState();
                 this.closeQuestionModal();
                 this.renderTeacherQuestions();
-                this.toast("Question saved to persistent storage.");
+                this.toast("Question saved.");
             },
 
             deleteQuestion(idx) {
@@ -1442,18 +1562,18 @@
                     const statusLabel = s.status === 0
                         ? `<span class="text-slate-400">Not Taken</span>`
                         : s.status === 1
-                        ? `<span class="text-amber-400 font-medium">In Progress</span>`
-                        : `<span class="text-rose-400 font-medium">BLOCKED (Completed)</span>`;
+                        ? `<span class="text-amber-400 font-bold">In Progress</span>`
+                        : `<span class="text-rose-400 font-bold">BLOCKED (Completed)</span>`;
 
                     return `
                         <tr>
-                            <td class="py-3.5 px-4 font-semibold text-white mono">${this.escapeHtml(s.id)}</td>
-                            <td class="py-3.5 px-4 text-slate-300">${this.escapeHtml(s.name)}</td>
-                            <td class="py-3.5 px-4 text-slate-400 mono">${this.escapeHtml(s.roll)}</td>
-                            <td class="py-3.5 px-4">${statusLabel}</td>
-                            <td class="py-3.5 px-4 text-right">
+                            <td class="py-4 px-6 font-bold text-white mono">${this.escapeHtml(s.id)}</td>
+                            <td class="py-4 px-6 text-slate-300 font-medium">${this.escapeHtml(s.name)}</td>
+                            <td class="py-4 px-6 text-slate-400 mono">${this.escapeHtml(s.roll)}</td>
+                            <td class="py-4 px-6">${statusLabel}</td>
+                            <td class="py-4 px-6 text-right">
                                 ${s.status !== 0 ? `
-                                    <button onclick="window.app.allowReExam('${s.id}')" class="px-3 py-1 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-medium transition">
+                                    <button onclick="window.app.allowReExam('${s.id}')" class="px-3.5 py-1.5 rounded-xl bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-bold transition">
                                         Allow Re-exam
                                     </button>
                                 ` : `<span class="text-slate-600">—</span>`}
@@ -1493,10 +1613,10 @@
                     const pane = document.getElementById('aPane_' + t);
                     if (!btn || !pane) return;
                     if (t === tab) {
-                        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+                        btn.className = "w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 transition";
                         pane.classList.remove('hidden');
                     } else {
-                        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition";
+                        btn.className = "w-full px-4 py-3 rounded-xl text-left text-xs font-bold flex items-center gap-3 text-slate-400 hover:bg-slate-900 hover:text-slate-200 transition";
                         pane.classList.add('hidden');
                     }
                 });
@@ -1510,16 +1630,16 @@
             renderAdminResults() {
                 const tbody = document.getElementById('adminResultsBody');
                 if (this.state.results.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">No examination results yet.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-10 text-center text-slate-500">No examination results recorded yet.</td></tr>`;
                     return;
                 }
                 tbody.innerHTML = this.state.results.map(r => `
                     <tr>
-                        <td class="py-3.5 px-4 font-semibold text-white mono">${this.escapeHtml(r.id)}</td>
-                        <td class="py-3.5 px-4 text-slate-300">${this.escapeHtml(r.name)}</td>
-                        <td class="py-3.5 px-4 text-slate-400 mono">${this.escapeHtml(r.roll)}</td>
-                        <td class="py-3.5 px-4 font-semibold text-emerald-400 mono">${r.score} / ${r.total}</td>
-                        <td class="py-3.5 px-4 text-slate-400 mono">${r.time}</td>
+                        <td class="py-4 px-6 font-bold text-white mono">${this.escapeHtml(r.id)}</td>
+                        <td class="py-4 px-6 text-slate-300 font-medium">${this.escapeHtml(r.name)}</td>
+                        <td class="py-4 px-6 text-slate-400 mono">${this.escapeHtml(r.roll)}</td>
+                        <td class="py-4 px-6 font-extrabold text-emerald-400 mono">${r.score} / ${r.total}</td>
+                        <td class="py-4 px-6 text-slate-400 mono">${r.time}</td>
                     </tr>
                 `).join('');
             },
@@ -1548,7 +1668,7 @@
                 document.getElementById('regName').value = '';
                 document.getElementById('regRoll').value = '';
                 document.getElementById('regPw').value = '';
-                this.toast(`Student ${id} registered and saved.`);
+                this.toast(`Student ${id} registered.`);
             },
 
             initAdminSheets() {
@@ -1566,23 +1686,23 @@
                 const keys = Object.keys(sheet);
 
                 if (keys.length === 0) {
-                    container.innerHTML = `<div class="py-8 text-center text-xs text-slate-500">No recorded answers for ${this.escapeHtml(stuId)}.</div>`;
+                    container.innerHTML = `<div class="py-10 text-center text-xs text-slate-500">No recorded answers for ${this.escapeHtml(stuId)}.</div>`;
                     return;
                 }
 
                 container.innerHTML = this.state.questions.map((q, idx) => {
                     const a = sheet[idx];
                     if (!a) return '';
-                    const responseText = a.isWritten ? a.text : `Choice ${a.choice}`;
+                    const responseText = a.isWritten ? a.text : `Option ${a.choice}`;
                     return `
-                        <div class="py-3.5 flex items-center justify-between gap-4 text-xs">
+                        <div class="py-4 flex items-center justify-between gap-4 text-xs">
                             <div>
-                                <span class="font-bold text-indigo-400 mono">Q${idx + 1}:</span>
-                                <span class="text-slate-300 ml-1">${this.escapeHtml(q.text)}</span>
+                                <span class="font-extrabold text-indigo-400 mono">Q${idx + 1}:</span>
+                                <span class="text-slate-200 font-medium ml-1.5">${this.escapeHtml(q.text)}</span>
                             </div>
                             <div class="flex items-center gap-3 shrink-0">
-                                <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-white font-medium mono">${this.escapeHtml(responseText)}</span>
-                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold mono ${a.mode === 'ON' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/15 text-amber-300'}">${a.mode}</span>
+                                <span class="px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-white font-bold mono">${this.escapeHtml(responseText)}</span>
+                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold mono ${a.mode === 'ON' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/15 text-amber-300'}">${a.mode}</span>
                             </div>
                         </div>
                     `;
@@ -1592,8 +1712,8 @@
             renderAdminLogs() {
                 const list = document.getElementById('adminLogsList');
                 list.innerHTML = this.state.logs.map(l => `
-                    <div class="py-2.5 flex items-center justify-between text-xs">
-                        <span class="text-slate-200">${this.escapeHtml(l.event)}</span>
+                    <div class="py-3.5 flex items-center justify-between text-xs">
+                        <span class="text-slate-200 font-medium">${this.escapeHtml(l.event)}</span>
                         <span class="text-slate-500 mono text-[11px]">${l.time}</span>
                     </div>
                 `).join('');
@@ -1604,15 +1724,7 @@
                 this.state = this.getDefaultState();
                 this.saveState();
                 this.logout();
-                this.toast("All local storage reset to default factory seed data.");
-            },
-
-            openCredModal() {
-                document.getElementById('credModal').classList.remove('hidden');
-            },
-
-            closeCredModal() {
-                document.getElementById('credModal').classList.add('hidden');
+                this.toast("All local storage reset to default seed state.");
             },
 
             escapeHtml(str) {
