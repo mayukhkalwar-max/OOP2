@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExamSystem v5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950">
+
+    <!-- MINIMAL TOP NAVBAR -->
+    <header class="sticky top-0 z-30 bg-slate-950/80 backdrop-blur-xl border-b border-slate-800/70 px-6 h-16 flex items-center">
+        <div class="max-w-5xl w-full mx-auto flex items-center justify-between">
+            <!-- Brand -->
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-sm">
+                    <i class="fa-solid fa-layer-group text-xs"></i>
+                </div>
+                <span class="font-bold text-white tracking-tight text-base">ExamSystem <span class="text-indigo-400 font-medium">v5</span></span>
+            </div>
+
+            <!-- Right Controls -->
+            <div class="flex items-center gap-4">
+                <!-- Online/Offline Toggle Pill -->
+                <button onclick="app.toggleNetwork()" id="netToggleBtn" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition cursor-pointer">
+                    <span id="netDot" class="w-2 h-2 rounded-full"></span>
+                    <span id="netLabel">Online</span>
+                </button>
+
+                <!-- User Info & Logout (Hidden when logged out) -->
+                <div id="navUserArea" class="hidden items-center gap-3 pl-4 border-l border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span id="navUserName" class="text-xs font-semibold text-slate-200"></span>
+                        <span id="navUserRole" class="text-[11px] font-medium px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 border border-slate-700"></span>
+                    </div>
+                    <button onclick="app.logout()" class="text-xs font-medium text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800/80 transition">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- TOAST NOTIFICATION AREA -->
+    <div id="toastArea" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none"></div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 flex flex-col justify-center py-10 px-6">
+        <div class="max-w-5xl w-full mx-auto">
+
+            <!-- ================= 1. LOGIN VIEW ================= -->
+            <section id="viewLogin" class="max-w-sm mx-auto">
+                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-8 shadow-2xl space-y-6">
+                    <div class="text-center space-y-1">
+                        <h1 class="text-xl font-bold text-white tracking-tight">Welcome back</h1>
+                        <p class="text-xs text-slate-400">Sign in to continue to ExamSystem</p>
+                    </div>
+
+                    <!-- Role Selector Pill Tabs -->
+                    <div class="grid grid-cols-3 bg-slate-950 p-1 rounded-xl border border-slate-800/80">
+                        <button type="button" onclick="app.setRole('Student')" id="roleBtn_Student" class="py-2 rounded-lg text-xs font-semibold transition">Student</button>
+                        <button type="button" onclick="app.setRole('Teacher')" id="roleBtn_Teacher" class="py-2 rounded-lg text-xs font-semibold transition">Teacher</button>
+                        <button type="button" onclick="app.setRole('Admin')" id="roleBtn_Admin" class="py-2 rounded-lg text-xs font-semibold transition">Admin</button>
+                    </div>
+
+                    <!-- Inline Login Error -->
+                    <div id="loginError" class="hidden p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs text-center font-medium"></div>
+
+                    <!-- Form -->
+                    <form onsubmit="app.login(event)" class="space-y-4">
+                        <div>
+                            <label for="loginId" class="block text-xs font-medium text-slate-300 mb-1.5">User ID</label>
+                            <input type="text" id="loginId" required autocomplete="off" placeholder="Enter User ID"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+
+                        <div>
+                            <label for="loginPw" class="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
+                            <input type="password" id="loginPw" required placeholder="Enter Password"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/20 transition">
+                            Sign In
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ================= 2. STUDENT PORTAL ================= -->
+            <section id="viewStudent" class="hidden max-w-3xl mx-auto space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Card 1: Examination -->
+                    <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl">
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <h2 class="text-base font-bold text-white">Examination</h2>
+                                <span id="stuStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-medium">Not Taken</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 pt-1">
+                                <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                    <span class="text-[11px] text-slate-400 block">Duration</span>
+                                    <span id="stuDurationText" class="text-sm font-semibold text-white mono mt-0.5 block">30 Mins</span>
+                                </div>
+                                <div class="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80">
+                                    <span class="text-[11px] text-slate-400 block">Total Questions</span>
+                                    <span id="stuQuestionCountText" class="text-sm font-semibold text-white mono mt-0.5 block">4</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="app.startOrResumeExam()" id="btnStartExam" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-sm transition disabled:opacity-40 disabled:pointer-events-none">
+                            Start Exam
+                        </button>
+                    </div>
+
+                    <!-- Card 2: My Result -->
+                    <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 flex flex-col justify-between space-y-6 shadow-xl">
+                        <div class="space-y-1">
+                            <h2 class="text-base font-bold text-white">My Result</h2>
+                            <p class="text-xs text-slate-400">Latest examination performance</p>
+                        </div>
+
+                        <div id="stuResultBox" class="flex-1 rounded-xl bg-slate-950/70 border border-slate-800/80 p-5 flex items-center justify-center text-center">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= 3. LIVE EXAM VIEW ================= -->
+            <section id="viewExam" class="hidden space-y-6">
+                <!-- Clean Header Bar -->
+                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-regular fa-clock text-indigo-400 text-sm"></i>
+                            <span id="examTimerDisplay" class="text-sm font-semibold text-white mono">00h 30m 00s</span>
+                        </div>
+                        <span id="examModeBadge" class="px-2.5 py-0.5 rounded-full text-[11px] font-medium border">ONLINE</span>
+                    </div>
+
+                    <button onclick="app.openSubmitModal()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">
+                        Submit Exam
+                    </button>
+                </div>
+
+                <!-- Main Exam Layout -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                    <!-- Left Area: Single Question Card -->
+                    <div class="lg:col-span-8 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-xl space-y-6">
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-800/80">
+                            <span id="examQHeader" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Question 1 of 4</span>
+                            <span id="examQTypeBadge" class="px-2.5 py-0.5 rounded-md text-xs font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">MCQ</span>
+                        </div>
+
+                        <h3 id="examQText" class="text-lg font-semibold text-white leading-relaxed"></h3>
+
+                        <!-- MCQ Options -->
+                        <div id="examMcqArea" class="space-y-3 pt-1"></div>
+
+                        <!-- Written Textarea -->
+                        <div id="examWrittenArea" class="hidden pt-1">
+                            <textarea id="examWrittenInput" rows="4" placeholder="Write your answer here..."
+                                oninput="app.handleWrittenInput(this.value)"
+                                class="w-full p-4 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition"></textarea>
+                        </div>
+
+                        <!-- Bottom Navigation & Clear -->
+                        <div class="pt-6 border-t border-slate-800/80 flex items-center justify-between">
+                            <button onclick="app.clearAnswer()" class="text-xs font-medium text-slate-400 hover:text-rose-400 px-3 py-2 rounded-lg hover:bg-rose-500/10 transition">
+                                Clear Answer
+                            </button>
+
+                            <div class="flex items-center gap-2.5">
+                                <button onclick="app.prevQ()" id="btnPrevQ" class="px-4 py-2 rounded-xl border border-slate-800 hover:bg-slate-800 text-slate-200 text-xs font-semibold transition disabled:opacity-30 disabled:pointer-events-none">
+                                    Previous
+                                </button>
+                                <button onclick="app.nextQ()" id="btnNextQ" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition disabled:opacity-30 disabled:pointer-events-none">
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Area: Simple Question Palette -->
+                    <div class="lg:col-span-4 bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="text-sm font-bold text-white">Question Palette</h4>
+                            <span id="examAnsweredCounter" class="text-xs text-slate-400">0/4 Answered</span>
+                        </div>
+
+                        <div id="examPalette" class="grid grid-cols-4 gap-2.5 pt-1"></div>
+
+                        <div class="pt-4 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-indigo-600"></span> Current</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-emerald-500/30 border border-emerald-500/50"></span> Answered</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-slate-950 border border-slate-800"></span> Empty</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= 4. TEACHER PORTAL ================= -->
+            <section id="viewTeacher" class="hidden space-y-6">
+                <!-- Clean Top Tab Bar -->
+                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+                    <h2 class="text-base font-bold text-white">Teacher Portal</h2>
+                    <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800/80">
+                        <button onclick="app.setTeacherTab('questions')" id="tTab_questions" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Questions</button>
+                        <button onclick="app.setTeacherTab('students')" id="tTab_students" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Students</button>
+                        <button onclick="app.setTeacherTab('settings')" id="tTab_settings" class="px-4 py-1.5 rounded-lg text-xs font-semibold transition">Settings</button>
+                    </div>
+                </div>
+
+                <!-- Tab 1: Questions -->
+                <div id="tPane_questions" class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Question Bank</h3>
+                            <p class="text-xs text-slate-400">Manage multiple-choice and written questions</p>
+                        </div>
+                        <button onclick="app.openQuestionModal()" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
+                            + Add Question
+                        </button>
+                    </div>
+
+                    <div id="teacherQuestionsList" class="divide-y divide-slate-800/80"></div>
+                </div>
+
+                <!-- Tab 2: Students -->
+                <div id="tPane_students" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Student Status</h3>
+                        <p class="text-xs text-slate-400">View progress or unlock completed exams for re-attempt</p>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase text-slate-400">
+                                    <th class="py-3 px-4">Student ID</th>
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Roll No</th>
+                                    <th class="py-3 px-4">Exam Status</th>
+                                    <th class="py-3 px-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teacherStudentsBody" class="divide-y divide-slate-800/60 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Settings -->
+                <div id="tPane_settings" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl max-w-md space-y-5">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Exam Settings</h3>
+                        <p class="text-xs text-slate-400">Set the time limit in minutes (1 to 1440)</p>
+                    </div>
+
+                    <form onsubmit="app.saveDuration(event)" class="space-y-4">
+                        <div>
+                            <label for="durationInput" class="block text-xs font-medium text-slate-300 mb-1.5">Duration (Minutes)</label>
+                            <input type="number" id="durationInput" min="1" max="1440" required
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
+                            Save Duration
+                        </button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- ================= 5. ADMIN PORTAL ================= -->
+            <section id="viewAdmin" class="hidden space-y-6">
+                <!-- Clean Top Tab Bar -->
+                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-4 sm:px-6 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+                    <h2 class="text-base font-bold text-white">Admin Portal</h2>
+                    <div class="flex flex-wrap bg-slate-950 p-1 rounded-xl border border-slate-800/80 gap-1">
+                        <button onclick="window.app.setAdminTab('results')" id="aTab_results" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Results</button>
+                        <button onclick="window.app.setAdminTab('register')" id="aTab_register" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Register Student</button>
+                        <button onclick="window.app.setAdminTab('sheets')" id="aTab_sheets" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Answer Sheets</button>
+                        <button onclick="window.app.setAdminTab('logs')" id="aTab_logs" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition">Activity Log</button>
+                    </div>
+                </div>
+
+                <!-- Tab 1: Results -->
+                <div id="aPane_results" class="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Examination Results</h3>
+                        <p class="text-xs text-slate-400">All submitted student scores</p>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="border-b border-slate-800 text-[11px] font-semibold uppercase text-slate-400">
+                                    <th class="py-3 px-4">Student ID</th>
+                                    <th class="py-3 px-4">Name</th>
+                                    <th class="py-3 px-4">Roll No</th>
+                                    <th class="py-3 px-4">Score</th>
+                                    <th class="py-3 px-4">Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminResultsBody" class="divide-y divide-slate-800/60 text-xs"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Register Student -->
+                <div id="aPane_register" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl max-w-md space-y-5">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Register Student</h3>
+                        <p class="text-xs text-slate-400">Create a new student account</p>
+                    </div>
+
+                    <form onsubmit="app.registerStudent(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Student ID</label>
+                            <input type="text" id="regId" required placeholder="e.g. STU005"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Full Name</label>
+                            <input type="text" id="regName" required placeholder="Student Name"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Roll No</label>
+                            <input type="text" id="regRoll" required placeholder="e.g. CS105"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1.5">Password</label>
+                            <input type="password" id="regPw" required placeholder="Set password"
+                                class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition">
+                            Register Student
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Tab 3: Answer Sheets -->
+                <div id="aPane_sheets" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-white">Student Answer Sheets</h3>
+                            <p class="text-xs text-slate-400">Inspect recorded responses for each student</p>
+                        </div>
+                        <select id="adminSheetSelect" onchange="app.renderAdminSheet()"
+                            class="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500">
+                        </select>
+                    </div>
+
+                    <div id="adminSheetContent" class="divide-y divide-slate-800/60"></div>
+                </div>
+
+                <!-- Tab 4: Activity Log -->
+                <div id="aPane_logs" class="hidden bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 rounded-2xl p-6 shadow-xl space-y-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Activity Log</h3>
+                        <p class="text-xs text-slate-400">Recent system audit events</p>
+                    </div>
+
+                    <div id="adminLogsList" class="divide-y divide-slate-800/60 max-h-96 overflow-y-auto"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- ================= MODAL: ADD / EDIT QUESTION ================= -->
+    <div id="questionModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 id="qModalTitle" class="text-base font-bold text-white">Add Question</h3>
+                <button onclick="app.closeQuestionModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="app.saveQuestion(event)" class="space-y-4">
+                <input type="hidden" id="qEditIndex" value="-1">
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Question Type</label>
+                    <select id="qTypeInput" onchange="app.toggleQuestionModalType()"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs focus:outline-none focus:border-indigo-500">
+                        <option value="M">Multiple Choice (MCQ)</option>
+                        <option value="W">Written / Short Answer</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Question Text</label>
+                    <textarea id="qTextInput" rows="2" required placeholder="Enter question..."
+                        class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-sm focus:outline-none focus:border-indigo-500"></textarea>
+                </div>
+
+                <!-- MCQ Fields -->
+                <div id="qMcqFields" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Option A</label>
+                            <input type="text" id="qOptA" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Option B</label>
+                            <input type="text" id="qOptB" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Option C</label>
+                            <input type="text" id="qOptC" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Option D</label>
+                            <input type="text" id="qOptD" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Correct Option</label>
+                        <select id="qCorrectMcq" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
+                            <option value="A">Option A</option>
+                            <option value="B">Option B</option>
+                            <option value="C">Option C</option>
+                            <option value="D">Option D</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Written Field -->
+                <div id="qWrittenField" class="hidden">
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Expected Keyword / Phrase</label>
+                    <input type="text" id="qCorrectWritten" placeholder="e.g. Data hiding"
+                        class="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs">
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="app.closeQuestionModal()" class="px-4 py-2 rounded-xl border border-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-800">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold">Save Question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL: CONFIRM EXAM SUBMIT ================= -->
+    <div id="submitModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-5 text-center">
+            <div class="w-11 h-11 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="text-base font-bold text-white">Submit Examination?</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Once submitted, your answers are finalized and cannot be modified or cleared.</p>
+            </div>
+            <div class="flex gap-2.5 pt-1">
+                <button onclick="app.closeSubmitModal()" class="flex-1 py-2.5 rounded-xl border border-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-800 transition">Cancel</button>
+                <button onclick="app.finishExam(false)" class="flex-1 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">Confirm Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPLICATION SCRIPT -->
+    <script>
+        const STORAGE_KEY = 'exam_system_v5_clean_state';
+
+        const appInstance = {
+            state: {
+                online: true,
+                duration: 30,
+                questions: [],
+                students: [],
+                results: [],
+                answers: {},
+                logs: []
+            },
+            session: {
+                role: 'Student',
+                user: null,
+                currentQ: 0,
+                timerInterval: null,
+                deadlineMs: 0
+            },
+
+            init() {
+                this.loadState();
+                this.setRole('Student');
+                this.updateNetworkUI();
+            },
+
+            loadState() {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    try {
+                        this.state = JSON.parse(raw);
+                        return;
+                    } catch (e) {}
+                }
+                this.state = {
+                    online: true,
+                    duration: 30,
+                    questions: [
+                        { text: "What is 12 + 8?", options: ["18", "20", "22", "24"], correct: "B", type: "M" },
+                        { text: "What is the capital of India?", options: ["Mumbai", "New Delhi", "Kolkata", "Chennai"], correct: "B", type: "M" },
+                        { text: "Which planet is called the Red Planet?", options: ["Venus", "Jupiter", "Mars", "Saturn"], correct: "C", type: "M" },
+                        { text: "Explain Encapsulation in OOP briefly.", options: ["", "", "", ""], correct: "Data hiding", type: "W" }
+                    ],
+                    students: [
+                        { id: "STU001", name: "Demo Student 1", roll: "DEMO", status: 0, start: 0, pw: "" },
+                        { id: "STU002", name: "Demo Student 2", roll: "DEMO", status: 0, start: 0, pw: "" },
+                        { id: "STU003", name: "Demo Student 3", roll: "DEMO", status: 0, start: 0, pw: "" },
+                        { id: "STU004", name: "Demo Student 4", roll: "DEMO", status: 0, start: 0, pw: "" }
+                    ],
+                    results: [],
+                    answers: {},
+                    logs: [
+                        { time: this.nowStr(), event: "System initialized" }
+                    ]
+                };
+                this.saveState();
+            },
+
+            saveState() {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+            },
+
+            logEvent(event) {
+                this.state.logs.unshift({ time: this.nowStr(), event });
+                if (this.state.logs.length > 100) this.state.logs.pop();
+                this.saveState();
+            },
+
+            nowSec() {
+                return Math.floor(Date.now() / 1000);
+            },
+
+            nowStr() {
+                const d = new Date();
+                return d.toISOString().replace('T', ' ').substring(0, 19);
+            },
+
+            fmtLeft(sec) {
+                if (sec < 0) sec = 0;
+                const h = String(Math.floor(sec / 3600)).padStart(2, '0');
+                const m = String(Math.floor((sec % 3600) / 60)).padStart(2, '0');
+                const s = String(Math.floor(sec % 60)).padStart(2, '0');
+                return `${h}h ${m}m ${s}s`;
+            },
+
+            toast(msg) {
+                const area = document.getElementById('toastArea');
+                if (!area) return;
+                const el = document.createElement('div');
+                el.className = 'px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-xs font-medium text-slate-200 shadow-xl transition';
+                el.textContent = msg;
+                area.appendChild(el);
+                setTimeout(() => el.remove(), 3000);
+            },
+
+            toggleNetwork() {
+                this.state.online = !this.state.online;
+                this.saveState();
+                this.updateNetworkUI();
+                this.toast(this.state.online ? "Mode: ONLINE (Connected)" : "Mode: OFFLINE (Local Save)");
+            },
+
+            updateNetworkUI() {
+                const btn = document.getElementById('netToggleBtn');
+                const dot = document.getElementById('netDot');
+                const label = document.getElementById('netLabel');
+                const examBadge = document.getElementById('examModeBadge');
+                if (!btn) return;
+
+                if (this.state.online) {
+                    btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-emerald-500/10 border-emerald-500/20 text-emerald-300 transition";
+                    dot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    label.textContent = "Online";
+                    if (examBadge) {
+                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 border border-emerald-500/20 text-emerald-300";
+                        examBadge.textContent = "ONLINE";
+                    }
+                } else {
+                    btn.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-amber-500/10 border-amber-500/20 text-amber-300 transition";
+                    dot.className = "w-2 h-2 rounded-full bg-amber-400";
+                    label.textContent = "Offline";
+                    if (examBadge) {
+                        examBadge.className = "px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-amber-500/10 border border-amber-500/20 text-amber-300";
+                        examBadge.textContent = "OFFLINE";
+                    }
+                }
+            },
+
+            setRole(role) {
+                this.session.role = role;
+                ['Student', 'Teacher', 'Admin'].forEach(r => {
+                    const btn = document.getElementById('roleBtn_' + r);
+                    if (!btn) return;
+                    if (r === role) {
+                        btn.className = "py-2 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow transition";
+                    } else {
+                        btn.className = "py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition";
+                    }
+                });
+                const err = document.getElementById('loginError');
+                if (err) err.classList.add('hidden');
+            },
+
+            showLoginError(msg) {
+                const err = document.getElementById('loginError');
+                if (!err) return;
+                err.textContent = msg;
+                err.classList.remove('hidden');
+            },
+
+            login(e) {
+                e.preventDefault();
+                const id = document.getElementById('loginId').value.trim();
+                const pw = document.getElementById('loginPw').value;
+                const role = this.session.role;
+
+                if (!id || !pw) {
+                    this.showLoginError("User ID and Password are required.");
+                    return;
+                }
+
+                if (role === 'Student') {
+                    const stu = this.state.students.find(s => s.id.toLowerCase() === id.toLowerCase());
+                    if (!stu) {
+                        this.logEvent("Login failed (Student)");
+                        this.showLoginError("Invalid Student ID or credentials.");
+                        return;
+                    }
+                    if (stu.pw && stu.pw !== pw) {
+                        this.logEvent("Login failed (Student)");
+                        this.showLoginError("Incorrect password.");
+                        return;
+                    }
+                    this.session.user = { id: stu.id, name: stu.name, role: 'Student' };
+                    this.logEvent(`Student logged in: ${stu.id}`);
+                    this.enterPortal('viewStudent');
+                    this.renderStudentPortal();
+                } else if (role === 'Teacher') {
+                    const validId = (id === '890teach' || id === '890mik');
+                    const validPw = (pw === 'teacher123' || pw === 'admin123');
+                    if (!validId || !validPw) {
+                        this.logEvent("Login failed (Teacher)");
+                        this.showLoginError("Invalid Teacher credentials.");
+                        return;
+                    }
+                    this.session.user = { id, name: 'Teacher', role: 'Teacher' };
+                    this.logEvent(`Teacher logged in: ${id}`);
+                    this.enterPortal('viewTeacher');
+                    this.setTeacherTab('questions');
+                } else if (role === 'Admin') {
+                    const validId = (id === 'admin_sys' || id === 'Mikhael@123');
+                    const validPw = (pw === 'admin123' || pw === 'master123');
+                    if (!validId || !validPw) {
+                        this.logEvent("Login failed (Admin)");
+                        this.showLoginError("Invalid Admin credentials.");
+                        return;
+                    }
+                    this.session.user = { id, name: 'Admin', role: 'Admin' };
+                    this.logEvent(`Admin logged in: ${id}`);
+                    this.enterPortal('viewAdmin');
+                    this.setAdminTab('results');
+                }
+
+                document.getElementById('loginId').value = '';
+                document.getElementById('loginPw').value = '';
+                document.getElementById('loginError').classList.add('hidden');
+            },
+
+            logout() {
+                if (this.session.timerInterval) {
+                    clearInterval(this.session.timerInterval);
+                    this.session.timerInterval = null;
+                }
+                if (this.session.user) {
+                    this.logEvent(`${this.session.user.role} logged out: ${this.session.user.id}`);
+                }
+                this.session.user = null;
+                document.getElementById('navUserArea').classList.add('hidden');
+                this.showOnlyView('viewLogin');
+            },
+
+            enterPortal(viewId) {
+                document.getElementById('navUserName').textContent = this.session.user.name;
+                document.getElementById('navUserRole').textContent = this.session.user.role;
+                const navArea = document.getElementById('navUserArea');
+                navArea.classList.remove('hidden');
+                navArea.classList.add('flex');
+                this.showOnlyView(viewId);
+            },
+
+            showOnlyView(viewId) {
+                ['viewLogin', 'viewStudent', 'viewExam', 'viewTeacher', 'viewAdmin'].forEach(v => {
+                    const el = document.getElementById(v);
+                    if (el) el.classList.toggle('hidden', v !== viewId);
+                });
+            },
+
+            renderStudentPortal() {
+                const stu = this.state.students.find(s => s.id === this.session.user.id);
+                if (!stu) return;
+
+                document.getElementById('stuDurationText').textContent = `${this.state.duration} Mins`;
+                document.getElementById('stuQuestionCountText').textContent = this.state.questions.length;
+
+                const badge = document.getElementById('stuStatusBadge');
+                const btn = document.getElementById('btnStartExam');
+
+                if (stu.status === 0) {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-800 text-slate-300";
+                    badge.textContent = "Not Taken";
+                    btn.textContent = "Start Exam";
+                    btn.disabled = false;
+                } else if (stu.status === 1) {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30";
+                    badge.textContent = "In Progress";
+                    btn.textContent = "Resume Exam";
+                    btn.disabled = false;
+                } else {
+                    badge.className = "px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/15 text-emerald-300 border border-emerald-500/30";
+                    badge.textContent = "Completed";
+                    btn.textContent = "Exam Completed";
+                    btn.disabled = true;
+                }
+
+                const myResults = this.state.results.filter(r => r.id === stu.id);
+                const resBox = document.getElementById('stuResultBox');
+                if (myResults.length > 0) {
+                    const last = myResults[myResults.length - 1];
+                    resBox.innerHTML = `
+                        <div class="space-y-1">
+                            <div class="text-3xl font-bold text-white mono">${last.score} <span class="text-lg text-slate-500">/ ${last.total}</span></div>
+                            <div class="text-xs text-slate-400">Submitted on ${last.time}</div>
+                        </div>
+                    `;
+                } else {
+                    resBox.innerHTML = `<span class="text-xs text-slate-500">No result available yet</span>`;
+                }
+            },
+
+            startOrResumeExam() {
+                const stu = this.state.students.find(s => s.id === this.session.user.id);
+                if (!stu || stu.status === 2) return;
+                if (this.state.questions.length === 0) {
+                    this.toast("No questions available.");
+                    return;
+                }
+
+                const now = this.nowSec();
+                if (stu.status === 0) {
+                    stu.status = 1;
+                    stu.start = now;
+                    this.saveState();
+                }
+
+                const remainSec = (stu.start + this.state.duration * 60) - now;
+                if (remainSec <= 0) {
+                    this.finishExam(true);
+                    return;
+                }
+
+                this.session.deadlineMs = Date.now() + remainSec * 1000;
+                this.session.currentQ = 0;
+                if (!this.state.answers[stu.id]) {
+                    this.state.answers[stu.id] = {};
+                }
+
+                this.logEvent(`Exam started/resumed: ${stu.id}`);
+                this.showOnlyView('viewExam');
+                this.renderExamQuestion();
+                this.startWatchdog();
+            },
+
+            startWatchdog() {
+                if (this.session.timerInterval) clearInterval(this.session.timerInterval);
+                const updateTimer = () => {
+                    const ms = this.session.deadlineMs - Date.now();
+                    const left = ms > 0 ? Math.ceil(ms / 1000) : 0;
+                    const timerEl = document.getElementById('examTimerDisplay');
+                    if (timerEl) timerEl.textContent = this.fmtLeft(left);
+                    if (left <= 0) {
+                        clearInterval(this.session.timerInterval);
+                        this.session.timerInterval = null;
+                        this.finishExam(true);
+                    }
+                };
+                updateTimer();
+                this.session.timerInterval = setInterval(updateTimer, 250);
+            },
+
+            renderExamQuestion() {
+                const qs = this.state.questions;
+                const idx = this.session.currentQ;
+                const q = qs[idx];
+                const stuId = this.session.user.id;
+                const sheet = this.state.answers[stuId] || {};
+                const ans = sheet[idx];
+
+                document.getElementById('examQHeader').textContent = `Question ${idx + 1} of ${qs.length}`;
+                document.getElementById('examQTypeBadge').textContent = q.type === 'W' ? 'Written' : 'MCQ';
+                document.getElementById('examQText').textContent = q.text;
+
+                const mcqArea = document.getElementById('examMcqArea');
+                const writtenArea = document.getElementById('examWrittenArea');
+
+                if (q.type === 'W') {
+                    mcqArea.classList.add('hidden');
+                    writtenArea.classList.remove('hidden');
+                    document.getElementById('examWrittenInput').value = (ans && ans.text) ? ans.text : '';
+                } else {
+                    writtenArea.classList.add('hidden');
+                    mcqArea.classList.remove('hidden');
+                    const letters = ['A', 'B', 'C', 'D'];
+                    mcqArea.innerHTML = letters.map((L, i) => {
+                        const selected = ans && ans.choice === L;
+                        return `
+                            <button type="button" onclick="window.app.selectMcq('${L}')"
+                                class="w-full p-4 rounded-xl border text-left flex items-center gap-3.5 transition ${
+                                    selected
+                                    ? 'bg-indigo-600/15 border-indigo-500 text-white'
+                                    : 'bg-slate-950/70 border-slate-800/90 text-slate-300 hover:border-slate-700'
+                                }">
+                                <span class="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold mono ${
+                                    selected ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                                }">${L}</span>
+                                <span class="text-sm font-medium">${this.escapeHtml(q.options[i] || '')}</span>
+                            </button>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('btnPrevQ').disabled = (idx === 0);
+                document.getElementById('btnNextQ').disabled = (idx === qs.length - 1);
+
+                this.renderPalette();
+            },
+
+            renderPalette() {
+                const qs = this.state.questions;
+                const stuId = this.session.user.id;
+                const sheet = this.state.answers[stuId] || {};
+                let answeredCount = 0;
+
+                const html = qs.map((_, i) => {
+                    const a = sheet[i];
+                    const isAnswered = a && ((a.choice && a.choice !== '') || (a.text && a.text.trim() !== ''));
+                    if (isAnswered) answeredCount++;
+                    const isCurrent = (i === this.session.currentQ);
+
+                    let cls = "bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700";
+                    if (isCurrent) {
+                        cls = "bg-indigo-600 border-indigo-500 text-white shadow-md shadow-indigo-600/20";
+                    } else if (isAnswered) {
+                        cls = "bg-emerald-500/15 border-emerald-500/40 text-emerald-300";
+                    }
+
+                    return `
+                        <button type="button" onclick="window.app.jumpToQ(${i})"
+                            class="h-10 rounded-xl border text-xs font-semibold mono transition ${cls}">
+                            ${i + 1}
+                        </button>
+                    `;
+                }).join('');
+
+                document.getElementById('examPalette').innerHTML = html;
+                document.getElementById('examAnsweredCounter').textContent = `${answeredCount}/${qs.length} Answered`;
+            },
+
+            selectMcq(letter) {
+                const stuId = this.session.user.id;
+                if (!this.state.answers[stuId]) this.state.answers[stuId] = {};
+                this.state.answers[stuId][this.session.currentQ] = {
+                    choice: letter,
+                    text: '',
+                    isWritten: false,
+                    mode: this.state.online ? 'ON' : 'OFF',
+                    t: this.nowSec()
+                };
+                this.saveState();
+                this.renderExamQuestion();
+            },
+
+            handleWrittenInput(val) {
+                const stuId = this.session.user.id;
+                if (!this.state.answers[stuId]) this.state.answers[stuId] = {};
+                const clean = val.replace(/[|\r\n]/g, ' ');
+                if (clean.trim() === '') {
+                    delete this.state.answers[stuId][this.session.currentQ];
+                } else {
+                    this.state.answers[stuId][this.session.currentQ] = {
+                        choice: '',
+                        text: clean,
+                        isWritten: true,
+                        mode: this.state.online ? 'ON' : 'OFF',
+                        t: this.nowSec()
+                    };
+                }
+                this.saveState();
+                this.renderPalette();
+            },
+
+            clearAnswer() {
+                const stuId = this.session.user.id;
+                if (this.state.answers[stuId]) {
+                    delete this.state.answers[stuId][this.session.currentQ];
+                    this.saveState();
+                }
+                this.renderExamQuestion();
+            },
+
+            prevQ() {
+                if (this.session.currentQ > 0) {
+                    this.session.currentQ--;
+                    this.renderExamQuestion();
+                }
+            },
+
+            nextQ() {
+                if (this.session.currentQ < this.state.questions.length - 1) {
+                    this.session.currentQ++;
+                    this.renderExamQuestion();
+                }
+            },
+
+            jumpToQ(i) {
+                this.session.currentQ = i;
+                this.renderExamQuestion();
+            },
+
+            openSubmitModal() {
+                document.getElementById('submitModal').classList.remove('hidden');
+            },
+
+            closeSubmitModal() {
+                document.getElementById('submitModal').classList.add('hidden');
+            },
+
+            finishExam(autoEnd) {
+                this.closeSubmitModal();
+                if (this.session.timerInterval) {
+                    clearInterval(this.session.timerInterval);
+                    this.session.timerInterval = null;
+                }
+
+                const stu = this.state.students.find(s => s.id === this.session.user.id);
+                if (!stu) return;
+
+                const sheet = this.state.answers[stu.id] || {};
+                let score = 0;
+
+                this.state.questions.forEach((q, idx) => {
+                    const a = sheet[idx];
+                    if (!a) return;
+                    if (q.type === 'W') {
+                        const cleanAns = (a.text || '').trim().toLowerCase();
+                        const cleanKey = (q.correct || '').trim().toLowerCase();
+                        if (cleanKey && cleanAns.includes(cleanKey)) score++;
+                    } else {
+                        if (a.choice && a.choice === q.correct) score++;
+                    }
+                });
+
+                stu.status = 2;
+                stu.start = 0;
+
+                this.state.results.push({
+                    id: stu.id,
+                    name: stu.name,
+                    roll: stu.roll,
+                    score,
+                    total: this.state.questions.length,
+                    time: this.nowStr()
+                });
+
+                this.logEvent(`Exam finished: ${stu.id} score ${score}${autoEnd ? ' (time up)' : ''}`);
+                this.saveState();
+
+                this.toast(autoEnd ? "Time up! Exam auto-submitted." : "Exam submitted successfully.");
+                this.showOnlyView('viewStudent');
+                this.renderStudentPortal();
+            },
+
+            setTeacherTab(tab) {
+                ['questions', 'students', 'settings'].forEach(t => {
+                    const btn = document.getElementById('tTab_' + t);
+                    const pane = document.getElementById('tPane_' + t);
+                    if (!btn) return;
+                    if (t === tab) {
+                        btn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+                        pane.classList.remove('hidden');
+                    } else {
+                        btn.className = "px-4 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition";
+                        pane.classList.add('hidden');
+                    }
+                });
+
+                if (tab === 'questions') this.renderTeacherQuestions();
+                if (tab === 'students') this.renderTeacherStudents();
+                if (tab === 'settings') document.getElementById('durationInput').value = this.state.duration;
+            },
+
+            renderTeacherQuestions() {
+                const list = document.getElementById('teacherQuestionsList');
+                if (this.state.questions.length === 0) {
+                    list.innerHTML = `<div class="py-8 text-center text-xs text-slate-500">No questions in the bank.</div>`;
+                    return;
+                }
+
+                list.innerHTML = this.state.questions.map((q, i) => `
+                    <div class="py-4 flex items-start justify-between gap-4">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-indigo-400 mono">Q${i + 1}</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300">${q.type === 'W' ? 'WRITTEN' : 'MCQ'}</span>
+                                <span class="text-[11px] text-emerald-400 mono">Key: ${this.escapeHtml(q.correct)}</span>
+                            </div>
+                            <p class="text-sm font-medium text-white">${this.escapeHtml(q.text)}</p>
+                            ${q.type === 'M' ? `
+                                <div class="text-xs text-slate-400 flex flex-wrap gap-x-4 gap-y-1 pt-1">
+                                    <span>A) ${this.escapeHtml(q.options[0])}</span>
+                                    <span>B) ${this.escapeHtml(q.options[1])}</span>
+                                    <span>C) ${this.escapeHtml(q.options[2])}</span>
+                                    <span>D) ${this.escapeHtml(q.options[3])}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button onclick="window.app.openQuestionModal(${i})" class="px-2.5 py-1.5 rounded-lg border border-slate-800 hover:bg-slate-800 text-xs text-slate-300 transition">Edit</button>
+                            <button onclick="window.app.deleteQuestion(${i})" class="px-2.5 py-1.5 rounded-lg border border-rose-500/20 hover:bg-rose-500/10 text-xs text-rose-400 transition">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            openQuestionModal(editIdx = -1) {
+                document.getElementById('qEditIndex').value = editIdx;
+                if (editIdx >= 0) {
+                    const q = this.state.questions[editIdx];
+                    document.getElementById('qModalTitle').textContent = `Update Question #${editIdx + 1}`;
+                    document.getElementById('qTypeInput').value = q.type;
+                    document.getElementById('qTextInput').value = q.text;
+                    document.getElementById('qOptA').value = q.options[0] || '';
+                    document.getElementById('qOptB').value = q.options[1] || '';
+                    document.getElementById('qOptC').value = q.options[2] || '';
+                    document.getElementById('qOptD').value = q.options[3] || '';
+                    document.getElementById('qCorrectMcq').value = q.type === 'M' ? q.correct : 'A';
+                    document.getElementById('qCorrectWritten').value = q.type === 'W' ? q.correct : '';
+                } else {
+                    document.getElementById('qModalTitle').textContent = 'Add Question';
+                    document.getElementById('qTypeInput').value = 'M';
+                    document.getElementById('qTextInput').value = '';
+                    document.getElementById('qOptA').value = '';
+                    document.getElementById('qOptB').value = '';
+                    document.getElementById('qOptC').value = '';
+                    document.getElementById('qOptD').value = '';
+                    document.getElementById('qCorrectMcq').value = 'A';
+                    document.getElementById('qCorrectWritten').value = '';
+                }
+                this.toggleQuestionModalType();
+                document.getElementById('questionModal').classList.remove('hidden');
+            },
+
+            closeQuestionModal() {
+                document.getElementById('questionModal').classList.add('hidden');
+            },
+
+            toggleQuestionModalType() {
+                const type = document.getElementById('qTypeInput').value;
+                document.getElementById('qMcqFields').classList.toggle('hidden', type === 'W');
+                document.getElementById('qWrittenField').classList.toggle('hidden', type !== 'W');
+            },
+
+            saveQuestion(e) {
+                e.preventDefault();
+                const idx = parseInt(document.getElementById('qEditIndex').value, 10);
+                const type = document.getElementById('qTypeInput').value;
+                const text = document.getElementById('qTextInput').value.trim();
+                if (!text) return;
+
+                let options = ["", "", "", ""];
+                let correct = "A";
+
+                if (type === 'M') {
+                    options = [
+                        document.getElementById('qOptA').value.trim() || "Option A",
+                        document.getElementById('qOptB').value.trim() || "Option B",
+                        document.getElementById('qOptC').value.trim() || "Option C",
+                        document.getElementById('qOptD').value.trim() || "Option D"
+                    ];
+                    correct = document.getElementById('qCorrectMcq').value;
+                } else {
+                    correct = document.getElementById('qCorrectWritten').value.trim() || "Answer";
+                }
+
+                const qObj = { text, options, correct, type };
+                if (idx >= 0) {
+                    this.state.questions[idx] = qObj;
+                    this.logEvent("Teacher updated question");
+                } else {
+                    this.state.questions.push(qObj);
+                    this.logEvent("Teacher added question");
+                }
+
+                this.saveState();
+                this.closeQuestionModal();
+                this.renderTeacherQuestions();
+                this.toast("Question saved.");
+            },
+
+            deleteQuestion(idx) {
+                this.state.questions.splice(idx, 1);
+                this.logEvent(`Teacher deleted question ${idx + 1}`);
+                this.saveState();
+                this.renderTeacherQuestions();
+                this.toast("Question deleted.");
+            },
+
+            renderTeacherStudents() {
+                const tbody = document.getElementById('teacherStudentsBody');
+                tbody.innerHTML = this.state.students.map(s => {
+                    const statusLabel = s.status === 0
+                        ? `<span class="text-slate-400">Not Taken</span>`
+                        : s.status === 1
+                        ? `<span class="text-amber-400 font-medium">In Progress</span>`
+                        : `<span class="text-rose-400 font-medium">BLOCKED (Completed)</span>`;
+
+                    return `
+                        <tr>
+                            <td class="py-3.5 px-4 font-semibold text-white mono">${this.escapeHtml(s.id)}</td>
+                            <td class="py-3.5 px-4 text-slate-300">${this.escapeHtml(s.name)}</td>
+                            <td class="py-3.5 px-4 text-slate-400 mono">${this.escapeHtml(s.roll)}</td>
+                            <td class="py-3.5 px-4">${statusLabel}</td>
+                            <td class="py-3.5 px-4 text-right">
+                                ${s.status !== 0 ? `
+                                    <button onclick="window.app.allowReExam('${s.id}')" class="px-3 py-1 rounded-lg bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600 hover:text-white text-xs font-medium transition">
+                                        Allow Re-exam
+                                    </button>
+                                ` : `<span class="text-slate-600">—</span>`}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+
+            allowReExam(stuId) {
+                const stu = this.state.students.find(s => s.id === stuId);
+                if (!stu) return;
+                stu.status = 0;
+                stu.start = 0;
+                delete this.state.answers[stuId];
+                this.logEvent(`Teacher allowed re-exam for ${stuId}`);
+                this.saveState();
+                this.renderTeacherStudents();
+                this.toast(`Re-exam unlocked for ${stuId}`);
+            },
+
+            saveDuration(e) {
+                e.preventDefault();
+                const m = parseInt(document.getElementById('durationInput').value, 10);
+                if (isNaN(m) || m < 1 || m > 1440) return;
+                this.state.duration = m;
+                this.logEvent(`Teacher set duration ${m} min`);
+                this.saveState();
+                this.toast(`Duration set to ${m} minutes.`);
+            },
+
+            setAdminTab(tab) {
+                ['results', 'register', 'sheets', 'logs'].forEach(t => {
+                    const btn = document.getElementById('aTab_' + t);
+                    const pane = document.getElementById('aPane_' + t);
+                    if (!btn) return;
+                    if (t === tab) {
+                        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white transition";
+                        pane.classList.remove('hidden');
+                    } else {
+                        btn.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-200 transition";
+                        pane.classList.add('hidden');
+                    }
+                });
+
+                if (tab === 'results') this.renderAdminResults();
+                if (tab === 'sheets') this.initAdminSheets();
+                if (tab === 'logs') this.renderAdminLogs();
+            },
+
+            renderAdminResults() {
+                const tbody = document.getElementById('adminResultsBody');
+                if (this.state.results.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-500">No examination results yet.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = this.state.results.map(r => `
+                    <tr>
+                        <td class="py-3.5 px-4 font-semibold text-white mono">${this.escapeHtml(r.id)}</td>
+                        <td class="py-3.5 px-4 text-slate-300">${this.escapeHtml(r.name)}</td>
+                        <td class="py-3.5 px-4 text-slate-400 mono">${this.escapeHtml(r.roll)}</td>
+                        <td class="py-3.5 px-4 font-semibold text-emerald-400 mono">${r.score} / ${r.total}</td>
+                        <td class="py-3.5 px-4 text-slate-400 mono">${r.time}</td>
+                    </tr>
+                `).join('');
+            },
+
+            registerStudent(e) {
+                e.preventDefault();
+                const id = document.getElementById('regId').value.trim();
+                const name = document.getElementById('regName').value.trim();
+                const roll = document.getElementById('regRoll').value.trim();
+                const pw = document.getElementById('regPw').value;
+
+                if (!/^[a-zA-Z0-9_.\-@]{1,32}$/.test(id)) {
+                    this.toast("Invalid ID format.");
+                    return;
+                }
+                if (this.state.students.some(s => s.id.toLowerCase() === id.toLowerCase())) {
+                    this.toast("Student ID already exists.");
+                    return;
+                }
+
+                this.state.students.push({ id, name, roll, status: 0, start: 0, pw });
+                this.logEvent(`Admin added student ${id}`);
+                this.saveState();
+
+                document.getElementById('regId').value = '';
+                document.getElementById('regName').value = '';
+                document.getElementById('regRoll').value = '';
+                document.getElementById('regPw').value = '';
+                this.toast(`Student ${id} registered.`);
+            },
+
+            initAdminSheets() {
+                const select = document.getElementById('adminSheetSelect');
+                select.innerHTML = this.state.students.map(s => `
+                    <option value="${this.escapeHtml(s.id)}">${this.escapeHtml(s.id)} — ${this.escapeHtml(s.name)}</option>
+                `).join('');
+                this.renderAdminSheet();
+            },
+
+            renderAdminSheet() {
+                const stuId = document.getElementById('adminSheetSelect').value;
+                const container = document.getElementById('adminSheetContent');
+                const sheet = this.state.answers[stuId] || {};
+                const keys = Object.keys(sheet);
+
+                if (keys.length === 0) {
+                    container.innerHTML = `<div class="py-8 text-center text-xs text-slate-500">No recorded answers for ${this.escapeHtml(stuId)}.</div>`;
+                    return;
+                }
+
+                container.innerHTML = this.state.questions.map((q, idx) => {
+                    const a = sheet[idx];
+                    if (!a) return '';
+                    const responseText = a.isWritten ? a.text : `Choice ${a.choice}`;
+                    return `
+                        <div class="py-3.5 flex items-center justify-between gap-4 text-xs">
+                            <div>
+                                <span class="font-bold text-indigo-400 mono">Q${idx + 1}:</span>
+                                <span class="text-slate-300 ml-1">${this.escapeHtml(q.text)}</span>
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <span class="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-white font-medium mono">${this.escapeHtml(responseText)}</span>
+                                <span class="text-[11px] text-slate-500 mono">${a.mode}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            renderAdminLogs() {
+                const list = document.getElementById('adminLogsList');
+                list.innerHTML = this.state.logs.map(l => `
+                    <div class="py-2.5 flex items-center justify-between text-xs">
+                        <span class="text-slate-200">${this.escapeHtml(l.event)}</span>
+                        <span class="text-slate-500 mono text-[11px]">${l.time}</span>
+                    </div>
+                `).join('');
+            },
+
+            escapeHtml(str) {
+                return String(str).replace(/[&<>"']/g, m => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[m]));
+            }
+        };
+
+        // Ensure global window.app binding
+        window.app = appInstance;
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => window.app.init());
+        } else {
+            window.app.init();
+        }
+    </script>
+</body>
+</html>
